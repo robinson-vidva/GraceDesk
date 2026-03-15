@@ -29,7 +29,6 @@
 <body class="h-full bg-gray-50" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     {% if user.is_authenticated %}
     <div class="min-h-full">
-        <!-- Mobile menu toggle -->
         <nav class="bg-primary-700" id="main-nav">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex h-16 items-center justify-between">
@@ -55,7 +54,6 @@
                             <a href="{% url 'accounts:logout' %}" class="rounded-md bg-primary-800 px-3 py-1.5 text-sm text-primary-100 hover:bg-primary-900 hover:text-white">Logout</a>
                         </div>
                     </div>
-                    <!-- Mobile menu button -->
                     <div class="md:hidden">
                         <button type="button" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="inline-flex items-center justify-center rounded-md bg-primary-800 p-2 text-primary-200 hover:bg-primary-600 hover:text-white">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -65,7 +63,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Mobile menu -->
             <div class="hidden md:hidden" id="mobile-menu">
                 <div class="space-y-1 px-2 pb-3 pt-2 sm:px-3">
                     <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600{% endif %} block rounded-md px-3 py-2 text-base font-medium">Dashboard</a>
@@ -111,7 +108,6 @@
         </main>
     </div>
     {% else %}
-    {# Unauthenticated layout — login/password reset pages #}
     <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         {% if messages %}
         <div class="mx-auto w-full max-w-md mb-4 space-y-2">
@@ -123,7 +119,7 @@
         </div>
         {% endif %}
 
-        {% block content %}{% endblock %}
+        {% block unauthenticated_content %}{% endblock %}
     </div>
     {% endif %}
 
