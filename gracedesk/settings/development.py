@@ -19,9 +19,11 @@ DATABASES = {
 # Email — console backend for development
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# Disable WhiteNoise compression in development
+# Use default static files storage in development
 STORAGES = {
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+STATICFILES_DIRS = [BASE_DIR / "static"]
