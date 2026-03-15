@@ -27,12 +27,18 @@ DATABASES = {
     )
 }
 
-# CSRF trusted origins for Railway
-# ALLOWED_HOSTS uses ".domain" for subdomains, but CSRF needs "https://*.domain"
+# CSRF trusted origins — built from ALLOWED_HOSTS + explicit env var
+_csrf_hosts = [
+    h.strip()
+    for h in os.environ.get("ALLOWED_HOSTS", "").replace('"', '').split(",")
+    if h.strip()
+]
 CSRF_TRUSTED_ORIGINS = [
     f"https://*{h}" if h.startswith(".") else f"https://{h}"
-    for h in ALLOWED_HOSTS
+    for h in _csrf_hosts
 ]
+# Also trust Railway wildcard
+CSRF_TRUSTED_ORIGINS.append("https://*.up.railway.app")
 
 # Security settings
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
