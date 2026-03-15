@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — GraceDesk{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <form method="post">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    {% for field in form %}
+                    {% include "includes/form_field.html" %}
+                    {% endfor %}
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <a href="{% url 'donations:batch_list' %}" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</a>
+                    <button type="submit" class="rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500">Create Batch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-input {
+        display: block; width: 100%; border-radius: 0.375rem;
+        border: 1px solid rgb(209, 213, 219); padding: 0.5rem 0.75rem;
+        font-size: 0.875rem; line-height: 1.25rem;
+    }
+    .form-input:focus { border-color: rgb(99, 102, 241); outline: none; }
+</style>
+{% endblock %}
