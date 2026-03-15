@@ -3,11 +3,13 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 
+from apps.core.decorators import tenant_required
 from .models import Donation, DonationBatch
 from .forms import DonationForm, DonationBatchForm
 
 
 @login_required
+@tenant_required
 def donation_list(request):
     tenant = request.user.tenant
     donations = Donation.objects.filter(tenant=tenant).select_related("member", "batch")
@@ -39,6 +41,7 @@ def donation_list(request):
 
 
 @login_required
+@tenant_required
 def donation_create(request):
     tenant = request.user.tenant
     if request.method == "POST":
@@ -58,6 +61,7 @@ def donation_create(request):
 
 
 @login_required
+@tenant_required
 def donation_detail(request, pk):
     tenant = request.user.tenant
     donation = get_object_or_404(Donation, pk=pk, tenant=tenant)
@@ -68,6 +72,7 @@ def donation_detail(request, pk):
 
 
 @login_required
+@tenant_required
 def donation_edit(request, pk):
     tenant = request.user.tenant
     donation = get_object_or_404(Donation, pk=pk, tenant=tenant)
@@ -89,6 +94,7 @@ def donation_edit(request, pk):
 # ── Batches ──────────────────────────────────────────────────────────
 
 @login_required
+@tenant_required
 def batch_list(request):
     tenant = request.user.tenant
     batches = DonationBatch.objects.filter(tenant=tenant)
@@ -99,6 +105,7 @@ def batch_list(request):
 
 
 @login_required
+@tenant_required
 def batch_create(request):
     tenant = request.user.tenant
     if request.method == "POST":
@@ -119,6 +126,7 @@ def batch_create(request):
 
 
 @login_required
+@tenant_required
 def batch_detail(request, pk):
     tenant = request.user.tenant
     batch = get_object_or_404(DonationBatch, pk=pk, tenant=tenant)
