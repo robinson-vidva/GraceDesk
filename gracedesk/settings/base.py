@@ -3,15 +3,14 @@ Django base settings for gracedesk project.
 Shared settings for all environments.
 """
 
+import os
 from pathlib import Path
-
-from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("SECRET_KEY", default="django-insecure-dev-key-change-in-production")
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-in-production")
 
 # Custom user model
 AUTH_USER_MODEL = "accounts.User"
@@ -100,7 +99,7 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 # WhiteNoise for static file serving
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
@@ -108,7 +107,7 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Field encryption key
-FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY", default="")
+FIELD_ENCRYPTION_KEY = os.environ.get("FIELD_ENCRYPTION_KEY", "")
 
 # Django-Q2 configuration (uses database as broker)
 Q_CLUSTER = {
@@ -116,7 +115,6 @@ Q_CLUSTER = {
     "workers": 2,
     "recycle": 500,
     "timeout": 60,
-    "django_redis": "default",
     "compress": True,
     "save_limit": 250,
     "queue_limit": 500,
