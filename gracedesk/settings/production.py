@@ -15,6 +15,8 @@ ALLOWED_HOSTS = [
     for h in os.environ.get("ALLOWED_HOSTS", "").replace('"', '').split(",")
     if h.strip()
 ]
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
 
 # Database — PostgreSQL via DATABASE_URL
 DATABASES = {
@@ -33,19 +35,21 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Security settings
-SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 0 if DEBUG else 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
 
-# Anymail — Brevo
-ANYMAIL = {
-    "BREVO_API_KEY": os.environ.get("BREVO_API_KEY", ""),
-}
-EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
+# Email — Brevo if configured, otherwise console
+_brevo_key = os.environ.get("BREVO_API_KEY", "")
+if _brevo_key and _brevo_key != "your-brevo-api-key":
+    ANYMAIL = {"BREVO_API_KEY": _brevo_key}
+    EMAIL_BACKEND = "anymail.backends.brevo.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@gracedesk.org")
 
 # Logging — see errors in Railway logs
@@ -64,7 +68,12 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": "WARNING",
+            "level": "DEBUG" if DEBUG else "WARNING",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "DEBUG",
             "propagate": False,
         },
     },
