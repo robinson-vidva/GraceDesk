@@ -26,6 +26,13 @@ DATABASES = {
     )
 }
 
+# CSRF trusted origins for Railway
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{h}" for h in ALLOWED_HOSTS if h.startswith(".")
+] + [
+    f"https://{h}" for h in ALLOWED_HOSTS if not h.startswith(".")
+]
+
 # Security settings
 SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
