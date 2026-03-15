@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Donations — GraceDesk{% endblock %}
+
+{% block page_actions %}
+<div class="flex space-x-2">
+    <a href="{% url 'donations:create' %}" class="rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500">+ Record Donation</a>
+    <a href="{% url 'donations:batch_list' %}" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Batches</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6 bg-white shadow rounded-lg p-4">
+    <form method="get" class="flex flex-col sm:flex-row gap-3">
+        <div class="flex-1">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search by donor name, receipt #..."
+                   class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-primary-500"
+                   hx-get="{% url 'donations:list' %}" hx-trigger="keyup changed delay:300ms" hx-target="#donation-table" hx-include="[name='type']">
+        </div>
+        <div>
+            <select name="type" class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-primary-500"
+                    hx-get="{% url 'donations:list' %}" hx-trigger="change" hx-target="#donation-table" hx-include="[name='q']">
+                <option value="">All Types</option>
+                {% for value, label in type_choices %}
+                <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+</div>
+
+<div id="donation-table">
+    {% include "donations/partials/donation_table.html" %}
+</div>
+{% endblock %}
