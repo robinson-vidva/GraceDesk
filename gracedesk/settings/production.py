@@ -2,6 +2,8 @@
 Django production settings for gracedesk project.
 """
 
+import os
+
 import dj_database_url
 from decouple import config
 
@@ -9,7 +11,11 @@ from .base import *  # noqa: F401, F403
 
 DEBUG = False
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default=".up.railway.app").split(",")
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.environ.get("ALLOWED_HOSTS", "").replace('"', '').split(",")
+    if h.strip()
+]
 
 # Database — PostgreSQL via DATABASE_URL
 DATABASES = {
