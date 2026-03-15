@@ -1,0 +1,12 @@
+django>=5.0,<6.0
+django-anymail[brevo]
+django-htmx
+django-q2
+djangorestframework
+gunicorn
+psycopg2-binary
+whitenoise
+dj-database-url
+python-decouple
+argon2-cffi
+Pillow
