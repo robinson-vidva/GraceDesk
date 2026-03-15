@@ -15,3 +15,14 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ("GraceDesk", {"fields": ("tenant", "phone")}),
     )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(tenant=request.user.tenant)
+
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser and not obj.tenant_id:
+            obj.tenant = request.user.tenant
+        super().save_model(request, obj, form, change)

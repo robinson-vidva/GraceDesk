@@ -1,17 +1,18 @@
 from django.contrib import admin
 
+from apps.core.admin import TenantScopedAdmin
 from .models import Household, Member
 
 
 @admin.register(Household)
-class HouseholdAdmin(admin.ModelAdmin):
+class HouseholdAdmin(TenantScopedAdmin):
     list_display = ("family_name", "city", "state", "home_phone", "tenant", "created_at")
     search_fields = ("family_name", "city", "address_line1")
     list_filter = ("state", "city", "tenant")
 
 
 @admin.register(Member)
-class MemberAdmin(admin.ModelAdmin):
+class MemberAdmin(TenantScopedAdmin):
     list_display = (
         "first_name", "last_name", "email", "phone",
         "membership_status", "household_role", "household", "tenant",
