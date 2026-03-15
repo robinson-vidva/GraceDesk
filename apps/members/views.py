@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
 
+from apps.core.decorators import tenant_required
 from .models import Member, Household
 from .forms import MemberForm, HouseholdForm
 
@@ -11,6 +12,7 @@ from .forms import MemberForm, HouseholdForm
 # ── Members ──────────────────────────────────────────────────────────
 
 @login_required
+@tenant_required
 def member_list(request):
     tenant = request.user.tenant
     members = Member.objects.filter(
@@ -47,6 +49,7 @@ def member_list(request):
 
 
 @login_required
+@tenant_required
 def member_create(request):
     tenant = request.user.tenant
     if request.method == "POST":
@@ -66,6 +69,7 @@ def member_create(request):
 
 
 @login_required
+@tenant_required
 def member_detail(request, pk):
     tenant = request.user.tenant
     member = get_object_or_404(Member, pk=pk, tenant=tenant, deleted_at__isnull=True)
@@ -78,6 +82,7 @@ def member_detail(request, pk):
 
 
 @login_required
+@tenant_required
 def member_edit(request, pk):
     tenant = request.user.tenant
     member = get_object_or_404(Member, pk=pk, tenant=tenant, deleted_at__isnull=True)
@@ -97,6 +102,7 @@ def member_edit(request, pk):
 
 
 @login_required
+@tenant_required
 def member_delete(request, pk):
     tenant = request.user.tenant
     member = get_object_or_404(Member, pk=pk, tenant=tenant, deleted_at__isnull=True)
@@ -114,6 +120,7 @@ def member_delete(request, pk):
 # ── Households ───────────────────────────────────────────────────────
 
 @login_required
+@tenant_required
 def household_list(request):
     tenant = request.user.tenant
     households = Household.objects.filter(tenant=tenant).prefetch_related("members")
@@ -137,6 +144,7 @@ def household_list(request):
 
 
 @login_required
+@tenant_required
 def household_create(request):
     tenant = request.user.tenant
     if request.method == "POST":
@@ -156,6 +164,7 @@ def household_create(request):
 
 
 @login_required
+@tenant_required
 def household_detail(request, pk):
     tenant = request.user.tenant
     household = get_object_or_404(Household, pk=pk, tenant=tenant)
@@ -168,6 +177,7 @@ def household_detail(request, pk):
 
 
 @login_required
+@tenant_required
 def household_edit(request, pk):
     tenant = request.user.tenant
     household = get_object_or_404(Household, pk=pk, tenant=tenant)
@@ -187,6 +197,7 @@ def household_edit(request, pk):
 
 
 @login_required
+@tenant_required
 def household_delete(request, pk):
     tenant = request.user.tenant
     household = get_object_or_404(Household, pk=pk, tenant=tenant)
