@@ -26,10 +26,10 @@ DATABASES = {
 }
 
 # CSRF trusted origins for Railway
+# ALLOWED_HOSTS uses ".domain" for subdomains, but CSRF needs "https://*.domain"
 CSRF_TRUSTED_ORIGINS = [
-    f"https://{h}" for h in ALLOWED_HOSTS if h.startswith(".")
-] + [
-    f"https://{h}" for h in ALLOWED_HOSTS if not h.startswith(".")
+    f"https://*{h}" if h.startswith(".") else f"https://{h}"
+    for h in ALLOWED_HOSTS
 ]
 
 # Security settings
