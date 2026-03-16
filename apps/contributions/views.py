@@ -8,6 +8,7 @@ from django.views.decorators.http import require_http_methods
 from .models import Contribution, ContributionCategory, ReportCache
 from apps.members.models import Member
 from apps.members.views import admin_required, log_action
+from apps.core.models import ChurchSettings
 
 
 @admin_required

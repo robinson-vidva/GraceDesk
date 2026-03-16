@@ -2,9 +2,9 @@
 {% block title %}Contributions — {{ church_settings.church_name }}{% endblock %}
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <div class="mb-6 flex justify-between items-center">
+  <div class="mb-6 flex flex-wrap justify-between items-center gap-3">
     <h1 class="text-2xl font-bold text-gray-900">Contributions</h1>
-    <a href="{% url 'admin_new_contribution' %}?step=1" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">+ New Contribution</a>
+    <a href="{% url 'admin_new_contribution' %}?step=1" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">+ New Contribution</a>
   </div>
 
   <!-- Filters -->

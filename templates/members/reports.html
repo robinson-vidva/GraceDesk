@@ -11,7 +11,7 @@
   <div class="space-y-4">
     {% for year in available_years %}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex justify-between items-center">
+      <div class="flex flex-wrap justify-between items-center gap-3">
         <div>
           <h3 class="text-lg font-semibold text-gray-900">{{ year }} Annual Report</h3>
           <p class="text-sm text-gray-500 mt-1">Complete contribution summary for {{ year }}</p>
@@ -28,12 +28,10 @@
       <div class="mt-4 pt-4 border-t border-gray-100">
         <p class="text-xs font-medium text-gray-500 mb-3">Monthly Reports</p>
         <div class="flex flex-wrap gap-2">
-          {% for month_num, month_name in "1,Jan|2,Feb|3,Mar|4,Apr|5,May|6,Jun|7,Jul|8,Aug|9,Sep|10,Oct|11,Nov|12,Dec"|split:"|" %}
-          {% endfor %}
-          {% for m in "1 2 3 4 5 6 7 8 9 10 11 12"|split:" " %}
-          <a href="{% url 'generate_report' %}?year={{ year }}&month={{ m }}"
+          {% for m_num, m_name in months %}
+          <a href="{% url 'generate_report' %}?year={{ year }}&month={{ m_num }}"
              class="px-3 py-1 text-xs border border-primary text-primary rounded-full hover:bg-primary hover:text-white transition-colors">
-            Month {{ m }}
+            {{ m_name }}
           </a>
           {% endfor %}
         </div>

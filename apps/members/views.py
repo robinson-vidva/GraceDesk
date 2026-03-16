@@ -155,9 +155,12 @@ def download_reports_view(request):
         if has_data:
             available_years.append(y)
 
+    import calendar
+    months = [(i, calendar.month_abbr[i]) for i in range(1, 13)]
     return render(request, "members/reports.html", {
         "available_years": available_years,
         "current_year": current_year,
+        "months": months,
     })
 
 
@@ -669,6 +672,10 @@ def admin_new_family_view(request):
                     head = Member.objects.get(pk=head_id)
                     family.head_member = head
                     family.save()
+                    # Also link head member to this family if not already set
+                    if not head.family:
+                        head.family = family
+                        head.save(update_fields=["family"])
                 except Member.DoesNotExist:
                     pass
             log_action(request.user, "create", "family", family.pk, {"name": family_name}, request)
@@ -713,7 +720,12 @@ def admin_family_edit_view(request, pk):
             family.family_name = family_name
             if head_id:
                 try:
-                    family.head_member = Member.objects.get(pk=head_id)
+                    head = Member.objects.get(pk=head_id)
+                    family.head_member = head
+                    # Link head member to this family if not already set
+                    if not head.family:
+                        head.family = family
+                        head.save(update_fields=["family"])
                 except Member.DoesNotExist:
                     family.head_member = None
             else:
