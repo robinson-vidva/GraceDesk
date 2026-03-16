@@ -104,7 +104,7 @@
         {% for log in recent_audit %}
         <div class="px-6 py-3">
           <p class="text-sm text-gray-700">
-            <span class="font-medium">{{ log.user|default:"System" }}</span>
+            <span class="font-medium">{{ log.user.email|default:"System" }}</span>
             &bull; {{ log.action }}
             {% if log.entity_type %} {{ log.entity_type }}{% endif %}
           </p>
