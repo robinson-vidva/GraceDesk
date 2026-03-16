@@ -24,6 +24,13 @@ STORAGES = {
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
 }
 
-STATICFILES_DIRS = [BASE_DIR / "static"]
+# Only include static dir if it exists
+import os as _os
+_static_dir = BASE_DIR / "static"
+if _static_dir.exists():
+    STATICFILES_DIRS = [_static_dir]

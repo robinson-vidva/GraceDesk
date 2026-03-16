@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}{{ member.full_name }} — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+    <div class="flex items-center space-x-4">
+      {% if member.profile_photo %}
+      <img src="{{ member.profile_photo.url }}" alt="{{ member.full_name }}" class="h-16 w-16 rounded-full object-cover border-2 border-gray-200">
+      {% else %}
+      <div class="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xl font-semibold">
+        {{ member.first_name.0 }}{{ member.last_name.0 }}
+      </div>
+      {% endif %}
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ member.full_name }}</h1>
+        <p class="text-gray-500 text-sm">{{ member.email }}</p>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1
+          {% if member.membership_status == 'active' %}bg-green-100 text-green-800
+          {% elif member.membership_status == 'pending' %}bg-yellow-100 text-yellow-800
+          {% else %}bg-gray-100 text-gray-800{% endif %}">
+          {{ member.get_membership_status_display }}
+        </span>
+      </div>
+    </div>
+    <div class="flex items-center space-x-3">
+      <a href="{% url 'admin_member_edit' member.pk %}" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">Edit</a>
+      {% if member.membership_status == 'active' %}
+      <form method="post" action="{% url 'admin_deactivate_member' member.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm font-medium hover:bg-red-200"
+          onclick="return confirm('Deactivate {{ member.full_name }}?')">
+          Deactivate
+        </button>
+      </form>
+      {% endif %}
+      {% if member.membership_status == 'pending' %}
+      <form method="post" action="{% url 'admin_approve_member' member.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Approve</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Member info -->
+    <div class="lg:col-span-1 space-y-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-4">Contact Info</h2>
+        <dl class="space-y-3 text-sm">
+          <div>
+            <dt class="text-gray-500">Email</dt>
+            <dd class="text-gray-900 font-medium">{{ member.email }}</dd>
+          </div>
+          {% if member.phones %}
+          <div>
+            <dt class="text-gray-500">Phone</dt>
+            <dd class="text-gray-900">{{ member.phones }}</dd>
+          </div>
+          {% endif %}
+          {% if member.address_line1 %}
+          <div>
+            <dt class="text-gray-500">Address</dt>
+            <dd class="text-gray-900">
+              {{ member.address_line1 }}<br>
+              {% if member.address_line2 %}{{ member.address_line2 }}<br>{% endif %}
+              {{ member.city }}{% if member.state %}, {{ member.state }}{% endif %} {{ member.postal_code }}
+            </dd>
+          </div>
+          {% endif %}
+          {% if member.family %}
+          <div>
+            <dt class="text-gray-500">Family</dt>
+            <dd><a href="{% url 'admin_family_detail' member.family.pk %}" class="text-primary hover:underline">{{ member.family.family_name }}</a></dd>
+          </div>
+          {% endif %}
+          <div>
+            <dt class="text-gray-500">Role</dt>
+            <dd class="text-gray-900">{{ member.get_family_role_display }}</dd>
+          </div>
+          <div>
+            <dt class="text-gray-500">Joined</dt>
+            <dd class="text-gray-900">{{ member.created_at|date:"m/d/Y" }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- User account -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-4">User Account</h2>
+        {% if member_user %}
+        <dl class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Account Active</dt>
+            <dd>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {% if member_user.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                {{ member_user.is_active|yesno:"Yes,No" }}
+              </span>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Admin</dt>
+            <dd class="text-gray-900">{{ member_user.is_admin|yesno:"Yes,No" }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Last Login</dt>
+            <dd class="text-gray-900">{{ member_user.last_login|date:"m/d/Y"|default:"Never" }}</dd>
+          </div>
+        </dl>
+        {% else %}
+        <p class="text-sm text-gray-500">No user account linked.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Contributions -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 class="text-base font-semibold text-gray-900">Contributions</h2>
+          <div class="text-sm text-gray-500">
+            YTD: <span class="font-bold text-primary">${{ total_ytd|floatformat:2 }}</span>
+            &nbsp;|&nbsp;
+            All Time: <span class="font-bold text-gray-700">${{ total_all|floatformat:2 }}</span>
+          </div>
+        </div>
+        {% if contributions %}
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              {% for c in contributions %}
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-3 text-sm text-gray-700">{{ c.date|date:"m/d/Y" }}</td>
+                <td class="px-6 py-3 text-sm text-gray-700">{{ c.category.name }}</td>
+                <td class="px-6 py-3 text-sm text-gray-500">{{ c.get_method_display }}</td>
+                <td class="px-6 py-3 text-sm font-semibold text-right">${{ c.amount|floatformat:2 }}</td>
+                <td class="px-6 py-3 text-sm font-mono text-gray-500">
+                  <a href="{% url 'admin_contribution_detail' c.pk %}" class="text-primary hover:underline">{{ c.receipt_number }}</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="px-6 py-8 text-center text-gray-500 text-sm">No contributions recorded.</div>
+        {% endif %}
+        <div class="px-6 py-3 border-t border-gray-200 text-sm">
+          <a href="{% url 'admin_generate_report' %}?member_id={{ member.pk }}&year={% now 'Y' %}" class="text-primary hover:underline">
+            Download Annual Report
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <a href="{% url 'admin_members' %}" class="text-sm text-primary hover:underline">&larr; Back to Members</a>
+  </div>
+</div>
+{% endblock %}

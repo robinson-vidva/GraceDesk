@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}My Contributions — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-900">My Contributions</h1>
+    <a href="{% url 'download_reports' %}" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">
+      Download Report
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Year</label>
+        <select name="year" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Years</option>
+          {% for y in years %}
+          <option value="{{ y.year }}" {% if filter_year == y.year|stringformat:"s" %}selected{% endif %}>{{ y.year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Month</label>
+        <select name="month" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Months</option>
+          {% for num, name in "1,January|2,February|3,March|4,April|5,May|6,June|7,July|8,August|9,September|10,October|11,November|12,December"|split:"|" %}
+          {% endfor %}
+          <option value="1" {% if filter_month == "1" %}selected{% endif %}>January</option>
+          <option value="2" {% if filter_month == "2" %}selected{% endif %}>February</option>
+          <option value="3" {% if filter_month == "3" %}selected{% endif %}>March</option>
+          <option value="4" {% if filter_month == "4" %}selected{% endif %}>April</option>
+          <option value="5" {% if filter_month == "5" %}selected{% endif %}>May</option>
+          <option value="6" {% if filter_month == "6" %}selected{% endif %}>June</option>
+          <option value="7" {% if filter_month == "7" %}selected{% endif %}>July</option>
+          <option value="8" {% if filter_month == "8" %}selected{% endif %}>August</option>
+          <option value="9" {% if filter_month == "9" %}selected{% endif %}>September</option>
+          <option value="10" {% if filter_month == "10" %}selected{% endif %}>October</option>
+          <option value="11" {% if filter_month == "11" %}selected{% endif %}>November</option>
+          <option value="12" {% if filter_month == "12" %}selected{% endif %}>December</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-700 mb-1">Category</label>
+        <select name="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.pk }}" {% if filter_category == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button type="submit" class="w-full btn-primary py-2 rounded-lg text-sm font-semibold">Filter</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Totals -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    <p class="text-sm text-gray-500">Total for selected period: <span class="text-lg font-bold text-primary">${{ total|floatformat:2 }}</span></p>
+  </div>
+
+  <!-- Contributions table -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {% if contributions %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt #</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for c in contributions %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ c.date|date:"m/d/Y" }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ c.category.name }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.get_method_display }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-right">${{ c.amount|floatformat:2 }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{{ c.receipt_number }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="px-6 py-12 text-center text-gray-500">
+      <p>No contributions found for the selected filters.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if family_contribs %}
+  <div class="mt-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-4">Family Contributions</h2>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            {% for c in family_contribs %}
+            <tr class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ c.member.full_name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ c.date|date:"m/d/Y" }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ c.category.name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-right">${{ c.amount|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Edit Contribution {{ contribution.receipt_number }} — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Edit Contribution</h1>
+    <p class="text-gray-500 text-sm mt-1">Receipt: {{ contribution.receipt_number }} &bull; {{ contribution.member.full_name }}</p>
+  </div>
+
+  {% if error %}
+  <div class="mb-4 bg-red-50 border border-red-300 text-red-700 rounded-md px-4 py-3 text-sm">{{ error }}</div>
+  {% endif %}
+
+  <form method="post" class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-4">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-2 text-gray-500 text-sm">$</span>
+          <input type="number" id="amount" name="amount" step="0.01" min="0.01" required
+            value="{{ contribution.amount }}"
+            class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+      </div>
+      <div>
+        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+        <input type="date" id="date" name="date" required
+          value="{{ contribution.date|date:'Y-m-d' }}"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+        <select id="category_id" name="category_id" required
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          {% for cat in categories %}
+          <option value="{{ cat.pk }}" {% if contribution.category.pk == cat.pk %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="method" class="block text-sm font-medium text-gray-700 mb-1">Method *</label>
+        <select id="method" name="method" required
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          {% for val, label in method_choices %}
+          <option value="{{ val }}" {% if contribution.method == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+      <textarea id="notes" name="notes" rows="2"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">{{ contribution.notes }}</textarea>
+    </div>
+
+    <div class="flex justify-between pt-4 border-t">
+      <a href="{% url 'admin_contribution_detail' contribution.pk %}" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</a>
+      <button type="submit" class="btn-primary px-6 py-2 rounded-lg text-sm font-semibold">Save Changes</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

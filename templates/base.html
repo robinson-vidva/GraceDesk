@@ -1,128 +1,130 @@
-{% load static %}
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}GraceDesk{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {"50":"#eef2ff","100":"#e0e7ff","200":"#c7d2fe","300":"#a5b4fc","400":"#818cf8","500":"#6366f1","600":"#4f46e5","700":"#4338ca","800":"#3730a3","900":"#312e81"},
-                    }
-                }
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{% if church_settings %}{{ church_settings.church_name }}{% else %}GraceDesk{% endif %}{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '{% if church_settings %}{{ church_settings.primary_color }}{% else %}#3B82F6{% endif %}',
+          }
         }
-    </script>
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <style>
-        [x-cloak] { display: none !important; }
-        .htmx-indicator { display: none; }
-        .htmx-request .htmx-indicator { display: inline-block; }
-        .htmx-request.htmx-indicator { display: inline-block; }
-    </style>
-    {% block extra_head %}{% endblock %}
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <style>
+    .btn-primary {
+      background-color: {% if church_settings %}{{ church_settings.primary_color }}{% else %}#3B82F6{% endif %};
+      color: white;
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    .text-primary { color: {% if church_settings %}{{ church_settings.primary_color }}{% else %}#3B82F6{% endif %}; }
+    .bg-primary { background-color: {% if church_settings %}{{ church_settings.primary_color }}{% else %}#3B82F6{% endif %}; }
+    .border-primary { border-color: {% if church_settings %}{{ church_settings.primary_color }}{% else %}#3B82F6{% endif %}; }
+  </style>
+  {% block extra_head %}{% endblock %}
 </head>
-<body class="h-full bg-gray-50" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-    {% if user.is_authenticated %}
-    <div class="min-h-full">
-        <nav class="bg-primary-700" id="main-nav">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex h-16 items-center justify-between">
-                    <div class="flex items-center">
-                        <a href="{% url 'dashboard' %}" class="flex-shrink-0">
-                            <span class="text-xl font-bold text-white">GraceDesk</span>
-                        </a>
-                        <div class="hidden md:block">
-                            <div class="ml-10 flex items-baseline space-x-4">
-                                <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Dashboard</a>
-                                <a href="{% url 'members:list' %}" class="{% if 'members' in request.resolver_match.namespace %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Members</a>
-                                <a href="{% url 'households:list' %}" class="{% if 'households' in request.resolver_match.namespace %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Households</a>
-                                <a href="{% url 'donations:list' %}" class="{% if 'donations' in request.resolver_match.namespace %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm font-medium">Donations</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="hidden md:block">
-                        <div class="ml-4 flex items-center md:ml-6 space-x-3">
-                            {% if user.is_staff %}
-                            <a href="/admin/" class="text-primary-100 hover:text-white text-sm" target="_blank">Admin</a>
-                            {% endif %}
-                            <span class="text-primary-200 text-sm">{{ user.get_full_name|default:user.username }}</span>
-                            <a href="{% url 'accounts:logout' %}" class="rounded-md bg-primary-800 px-3 py-1.5 text-sm text-primary-100 hover:bg-primary-900 hover:text-white">Logout</a>
-                        </div>
-                    </div>
-                    <div class="md:hidden">
-                        <button type="button" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="inline-flex items-center justify-center rounded-md bg-primary-800 p-2 text-primary-200 hover:bg-primary-600 hover:text-white">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="hidden md:hidden" id="mobile-menu">
-                <div class="space-y-1 px-2 pb-3 pt-2 sm:px-3">
-                    <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600{% endif %} block rounded-md px-3 py-2 text-base font-medium">Dashboard</a>
-                    <a href="{% url 'members:list' %}" class="{% if 'members' in request.resolver_match.namespace %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600{% endif %} block rounded-md px-3 py-2 text-base font-medium">Members</a>
-                    <a href="{% url 'households:list' %}" class="{% if 'households' in request.resolver_match.namespace %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600{% endif %} block rounded-md px-3 py-2 text-base font-medium">Households</a>
-                    <a href="{% url 'donations:list' %}" class="{% if 'donations' in request.resolver_match.namespace %}bg-primary-900 text-white{% else %}text-primary-100 hover:bg-primary-600{% endif %} block rounded-md px-3 py-2 text-base font-medium">Donations</a>
-                </div>
-                <div class="border-t border-primary-800 pb-3 pt-4">
-                    <div class="flex items-center px-5">
-                        <span class="text-sm text-primary-200">{{ user.get_full_name|default:user.username }}</span>
-                    </div>
-                    <div class="mt-3 space-y-1 px-2">
-                        {% if user.is_staff %}
-                        <a href="/admin/" class="block rounded-md px-3 py-2 text-base text-primary-200 hover:bg-primary-600" target="_blank">Admin</a>
-                        {% endif %}
-                        <a href="{% url 'accounts:logout' %}" class="block rounded-md px-3 py-2 text-base text-primary-200 hover:bg-primary-600">Logout</a>
-                    </div>
-                </div>
-            </div>
-        </nav>
+<body class="bg-gray-50 min-h-screen flex flex-col">
 
-        {% if page_title %}
-        <header class="bg-white shadow">
-            <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
-                <h1 class="text-2xl font-bold tracking-tight text-gray-900">{{ page_title }}</h1>
-                {% block page_actions %}{% endblock %}
-            </div>
-        </header>
-        {% endif %}
-
-        <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            {% if messages %}
-            <div class="mb-4 space-y-2">
-                {% for message in messages %}
-                <div class="rounded-md p-4 {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border border-yellow-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
-                    {{ message }}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            {% block content %}{% endblock %}
-        </main>
-    </div>
-    {% else %}
-    <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        {% if messages %}
-        <div class="mx-auto w-full max-w-md mb-4 space-y-2">
-            {% for message in messages %}
-            <div class="rounded-md p-4 {% if message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'success' %}bg-green-50 text-green-800{% else %}bg-blue-50 text-blue-800{% endif %}">
-                {{ message }}
-            </div>
-            {% endfor %}
+  {% if user.is_authenticated %}
+  <nav class="bg-primary shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center space-x-4">
+          {% if church_settings and church_settings.church_logo %}
+            <img src="{{ church_settings.church_logo.url }}" alt="Logo" class="h-10 w-auto rounded">
+          {% endif %}
+          <a href="{% if user.is_admin %}{% url 'admin_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" class="text-white font-bold text-lg">
+            {% if church_settings %}{{ church_settings.church_name }}{% else %}GraceDesk{% endif %}
+          </a>
         </div>
-        {% endif %}
-
-        {% block unauthenticated_content %}{% endblock %}
+        <div class="hidden md:flex items-center space-x-4">
+          {% if user.is_admin %}
+            <a href="{% url 'admin_dashboard' %}" class="text-white hover:text-blue-200 text-sm font-medium">Dashboard</a>
+            <a href="{% url 'admin_members' %}" class="text-white hover:text-blue-200 text-sm font-medium">Members</a>
+            <a href="{% url 'admin_contributions' %}" class="text-white hover:text-blue-200 text-sm font-medium">Contributions</a>
+            <a href="{% url 'admin_reports' %}" class="text-white hover:text-blue-200 text-sm font-medium">Reports</a>
+            <a href="{% url 'admin_settings' %}" class="text-white hover:text-blue-200 text-sm font-medium">Settings</a>
+          {% else %}
+            <a href="{% url 'dashboard' %}" class="text-white hover:text-blue-200 text-sm font-medium">Dashboard</a>
+            <a href="{% url 'my_contributions' %}" class="text-white hover:text-blue-200 text-sm font-medium">My Contributions</a>
+            <a href="{% url 'download_reports' %}" class="text-white hover:text-blue-200 text-sm font-medium">Reports</a>
+            <a href="{% url 'profile' %}" class="text-white hover:text-blue-200 text-sm font-medium">Profile</a>
+          {% endif %}
+          <div class="relative" x-data="{ open: false }">
+            <span class="text-white text-sm">{{ user.full_name }}</span>
+            <a href="{% url 'logout' %}" class="ml-3 text-white hover:text-blue-200 text-sm font-medium">Logout</a>
+          </div>
+        </div>
+        <!-- Mobile menu button -->
+        <div class="md:hidden">
+          <button id="mobile-menu-btn" class="text-white focus:outline-none">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
-    {% endif %}
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="md:hidden hidden bg-primary border-t border-blue-400">
+      <div class="px-4 py-3 space-y-2">
+        {% if user.is_admin %}
+          <a href="{% url 'admin_dashboard' %}" class="block text-white text-sm py-1">Dashboard</a>
+          <a href="{% url 'admin_members' %}" class="block text-white text-sm py-1">Members</a>
+          <a href="{% url 'admin_contributions' %}" class="block text-white text-sm py-1">Contributions</a>
+          <a href="{% url 'admin_reports' %}" class="block text-white text-sm py-1">Reports</a>
+          <a href="{% url 'admin_settings' %}" class="block text-white text-sm py-1">Settings</a>
+        {% else %}
+          <a href="{% url 'dashboard' %}" class="block text-white text-sm py-1">Dashboard</a>
+          <a href="{% url 'my_contributions' %}" class="block text-white text-sm py-1">My Contributions</a>
+          <a href="{% url 'download_reports' %}" class="block text-white text-sm py-1">Reports</a>
+          <a href="{% url 'profile' %}" class="block text-white text-sm py-1">Profile</a>
+        {% endif %}
+        <a href="{% url 'logout' %}" class="block text-white text-sm py-1">Logout ({{ user.full_name }})</a>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
 
-    {% block extra_js %}{% endblock %}
+  <!-- Flash messages -->
+  {% if messages %}
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+    {% for message in messages %}
+    <div class="mb-2 px-4 py-3 rounded-md text-sm font-medium
+      {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-300
+      {% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-300
+      {% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-300
+      {% else %}bg-blue-100 text-blue-800 border border-blue-300{% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main class="flex-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-gray-800 text-gray-400 text-center text-xs py-4 mt-8">
+    {% if church_settings %}{{ church_settings.church_name }} &bull; {% endif %}
+    Powered by GraceDesk
+    &bull; <a href="{% url 'terms' %}" class="hover:text-gray-200">Terms</a>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+      document.getElementById('mobile-menu')?.classList.toggle('hidden');
+    });
+  </script>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Members — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-900">Members</h1>
+    <a href="{% url 'admin_new_member' %}" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">
+      + Add Member
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="sm:col-span-2">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by name or email..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+      </div>
+      <div class="flex gap-2">
+        <select name="status" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Statuses</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if filter_status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">Search</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {% if members %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Family</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for m in members %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center space-x-3">
+                {% if m.profile_photo %}
+                <img src="{{ m.profile_photo.url }}" alt="{{ m.full_name }}" class="h-8 w-8 rounded-full object-cover">
+                {% else %}
+                <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-medium">
+                  {{ m.first_name.0 }}{{ m.last_name.0 }}
+                </div>
+                {% endif %}
+                <a href="{% url 'admin_member_detail' m.pk %}" class="text-sm font-medium text-gray-900 hover:text-primary">{{ m.full_name }}</a>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ m.email }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ m.family.family_name|default:"—" }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                {% if m.membership_status == 'active' %}bg-green-100 text-green-800
+                {% elif m.membership_status == 'pending' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ m.get_membership_status_display }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ m.created_at|date:"m/d/Y" }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <a href="{% url 'admin_member_edit' m.pk %}" class="text-primary hover:underline mr-3">Edit</a>
+              <a href="{% url 'admin_member_detail' m.pk %}" class="text-gray-500 hover:underline">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="px-6 py-12 text-center text-gray-500">
+      <p>No members found{% if q %} for "{{ q }}"{% endif %}.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

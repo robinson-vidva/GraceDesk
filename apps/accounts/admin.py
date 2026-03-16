@@ -1,28 +1,35 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-
-from .models import User
+from .models import User, LoginAttempt
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ("username", "email", "first_name", "last_name", "tenant", "is_staff", "is_active")
-    search_fields = ("username", "email", "first_name", "last_name")
-    list_filter = ("is_staff", "is_active", "is_superuser", "tenant")
-    fieldsets = BaseUserAdmin.fieldsets + (
-        ("GraceDesk", {"fields": ("tenant", "phone")}),
-    )
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        ("GraceDesk", {"fields": ("tenant", "phone")}),
-    )
+    list_display = ["email", "first_name", "last_name", "is_admin", "is_active", "created_at"]
+    list_filter = ["is_admin", "is_active", "can_manage_admins"]
+    search_fields = ["email", "first_name", "last_name"]
+    ordering = ["email"]
+    fieldsets = [
+        (None, {"fields": ["email", "password"]}),
+        ("Personal Info", {"fields": ["first_name", "last_name", "member"]}),
+        ("Permissions", {"fields": [
+            "is_active", "is_admin", "can_manage_admins", "is_staff", "is_superuser",
+            "must_change_password", "groups", "user_permissions",
+        ]}),
+        ("Security", {"fields": ["failed_login_attempts", "locked_until"]}),
+        ("Dates", {"fields": ["last_login", "created_at", "updated_at"]}),
+    ]
+    readonly_fields = ["created_at", "updated_at", "last_login"]
+    add_fieldsets = [
+        (None, {
+            "classes": ["wide"],
+            "fields": ["email", "password1", "password2", "first_name", "last_name", "is_active", "is_admin"],
+        }),
+    ]
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        return qs.filter(tenant=request.user.tenant)
 
-    def save_model(self, request, obj, form, change):
-        if not request.user.is_superuser and not obj.tenant_id:
-            obj.tenant = request.user.tenant
-        super().save_model(request, obj, form, change)
+@admin.register(LoginAttempt)
+class LoginAttemptAdmin(admin.ModelAdmin):
+    list_display = ["email", "ip_address", "successful", "attempted_at"]
+    list_filter = ["successful"]
+    readonly_fields = ["email", "ip_address", "attempted_at", "successful"]

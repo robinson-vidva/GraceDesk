@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Pending Members — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Pending Member Approvals</h1>
+    <p class="text-gray-500 text-sm mt-1">Review and approve or reject member registrations</p>
+  </div>
+
+  {% if pending_members %}
+  <div class="space-y-4">
+    {% for member in pending_members %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">{{ member.full_name }}</h3>
+          <p class="text-sm text-gray-600">{{ member.email }}</p>
+          {% if member.phones %}<p class="text-sm text-gray-500">{{ member.phones }}</p>{% endif %}
+          <p class="text-xs text-gray-400 mt-1">Registered {{ member.created_at|date:"m/d/Y H:i" }}</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <a href="{% url 'admin_member_detail' member.pk %}" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+            View Details
+          </a>
+          <form method="post" action="{% url 'admin_reject_member' member.pk %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm font-medium hover:bg-red-200"
+              onclick="return confirm('Reject {{ member.full_name }}?')">
+              Reject
+            </button>
+          </form>
+          <form method="post" action="{% url 'admin_approve_member' member.pk %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+              Approve
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+    <p class="text-gray-600 font-medium">All clear! No pending registrations.</p>
+  </div>
+  {% endif %}
+
+  <div class="mt-6">
+    <a href="{% url 'admin_dashboard' %}" class="text-sm text-primary hover:underline">&larr; Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}
