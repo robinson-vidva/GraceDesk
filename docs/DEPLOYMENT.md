@@ -5,6 +5,8 @@
 - GitHub repo with working Django app
 - Railway account (trial or Hobby plan)
 - Brevo account with API key
+- Cloudflare account (for Turnstile keys)
+- Custom domain (optional): gracedesk.askdevotions.com
 
 ## Step 1: Prepare the Repo
 
@@ -22,10 +24,15 @@ psycopg2-binary
 whitenoise
 dj-database-url
 python-decouple
+Pillow
+reportlab
+argon2-cffi
+cryptography
 ```
 
 **Procfile:**
 ```
+release: python manage.py migrate && python manage.py setup_gracedesk --no-input
 web: gunicorn gracedesk.wsgi --bind 0.0.0.0:$PORT
 ```
 
@@ -49,51 +56,66 @@ python-3.12.x
 
 ## Step 4: Set Environment Variables
 
-In your web service settings, add:
+In your web service, click **Variables** tab, then **Raw Editor** and paste:
 
 ```
-SECRET_KEY=<generate-a-random-key>
-DEBUG=False
-ALLOWED_HOSTS=.up.railway.app,gracedesk.org
+ALLOWED_HOSTS=".up.railway.app,gracedesk.askdevotions.com"
 BREVO_API_KEY=<your-brevo-api-key>
-DJANGO_SETTINGS_MODULE=gracedesk.settings.production
+DATABASE_URL="${{Postgres.DATABASE_URL}}"
+DEBUG="False"
+DJANGO_SETTINGS_MODULE="gracedesk.settings.production"
+SECRET_KEY=<generate-a-random-key>
 ```
 
-`DATABASE_URL` is auto-injected by Railway when PostgreSQL is linked.
-
-## Step 5: Run Migrations
-
-In Railway's service settings, add a deploy command or use the Railway CLI:
-
+Generate SECRET_KEY:
 ```bash
-railway run python manage.py migrate
-railway run python manage.py createsuperuser
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
-Or add to **Procfile** as a release command:
-```
-release: python manage.py migrate
-web: gunicorn gracedesk.wsgi --bind 0.0.0.0:$PORT
-```
+Note: Brevo API key, Turnstile keys, church settings, and email config are managed inside the app via Admin Settings page — not as environment variables.
 
-## Step 6: Custom Domain (Hobby plan required)
+## Step 5: First Deploy
 
-1. In your service, go to **Settings** > **Networking** > **Custom Domain**
-2. Add `gracedesk.org`
-3. At your domain registrar, create a CNAME record:
-   - Name: `@` or `gracedesk.org`
+Railway auto-deploys when you push to `main`. The Procfile release command runs:
+1. `python manage.py migrate` — creates all tables
+2. `python manage.py setup_gracedesk --no-input` — creates default settings, categories, and admin user
+
+## Step 6: First Login
+
+1. Visit your Railway URL (e.g., `web-production-xxxxx.up.railway.app`)
+2. Click Login
+3. Email: `admin@gracedesk.local`
+4. Password: `changeme123`
+5. You'll be forced to change the password
+6. Go to Admin Settings to configure:
+   - Church name, logo, address, phone, email
+   - EIN/Tax ID (for tax reports)
+   - Brevo API key and email settings
+   - Cloudflare Turnstile site key and secret key
+   - Contribution categories
+   - Bible verses for email rotation
+
+## Step 7: Custom Domain
+
+### For gracedesk.askdevotions.com:
+
+**In Railway:**
+1. Click web service > **Settings** > **Networking** > **Custom Domain**
+2. Add `gracedesk.askdevotions.com`
+
+**In your DNS (where askdevotions.com is managed):**
+1. Add a CNAME record:
+   - Name: `gracedesk`
    - Value: the `.up.railway.app` domain Railway provides
-4. Railway auto-provisions SSL certificate
+2. Railway auto-provisions SSL certificate
 
-## Step 7: Brevo Webhook Setup
+**Update ALLOWED_HOSTS** to include the custom domain (already done in Step 4).
 
-1. In Brevo dashboard, go to **Settings** > **Webhooks**
-2. Add webhook URL: `https://gracedesk.org/api/v1/webhooks/brevo/`
+## Step 8: Brevo Webhook Setup (Optional, Phase 2)
+
+1. In Brevo dashboard: **Settings** > **Webhooks**
+2. Add webhook URL: `https://gracedesk.askdevotions.com/api/webhooks/brevo/`
 3. Select events: delivered, opened, clicked, hard_bounce, soft_bounce, spam, unsubscribed
-4. Copy the webhook token and add to Railway env vars:
-   ```
-   BREVO_WEBHOOK_TOKEN=<your-webhook-token>
-   ```
 
 ## Auto-Deploy
 
@@ -113,6 +135,7 @@ railway link
 
 # Run commands on Railway
 railway run python manage.py migrate
+railway run python manage.py setup_gracedesk
 railway run python manage.py createsuperuser
 railway run python manage.py collectstatic --noinput
 
@@ -122,7 +145,9 @@ railway logs
 
 ## Cost
 
-- **Hobby plan:** $5/month (includes $5 usage credits)
+- **Railway Hobby plan:** $5/month (includes $5 usage credits)
 - **PostgreSQL:** included in usage credits
 - **Brevo:** free tier (300 emails/day)
+- **Cloudflare Turnstile:** free
+- **Custom domain:** depends on registrar
 - **Expected total:** ~$5/month
