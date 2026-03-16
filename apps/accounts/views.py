@@ -107,7 +107,7 @@ def login_view(request):
     return render(request, "accounts/login.html", {
         "error": error,
         "lockout_remaining": lockout_remaining,
-        "church": church,
+        "church_settings": church,
     })
 
 
@@ -183,7 +183,7 @@ def register_view(request):
     return render(request, "accounts/register.html", {
         "error": error,
         "form_data": form_data,
-        "church": church,
+        "church_settings": church,
     })
 
 
@@ -214,7 +214,7 @@ def forgot_password_view(request):
 
     return render(request, "accounts/forgot_password.html", {
         "sent": sent,
-        "church": church,
+        "church_settings": church,
     })
 
 
@@ -254,7 +254,7 @@ def password_reset_confirm_view(request, uidb64, token):
     return render(request, "accounts/password_reset_confirm.html", {
         "error": error,
         "valid_link": valid_link,
-        "church": church,
+        "church_settings": church,
     })
 
 
@@ -291,5 +291,5 @@ def force_password_change_view(request):
 
     return render(request, "accounts/force_password_change.html", {
         "error": error,
-        "church": church,
+        "church_settings": church,
     })

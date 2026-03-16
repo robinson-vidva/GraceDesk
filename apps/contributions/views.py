@@ -2,12 +2,14 @@ from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from .models import Contribution, ContributionCategory, ReportCache
 from apps.members.models import Member
 from apps.members.views import admin_required, log_action
+from apps.core.models import ChurchSettings
 
 
 @admin_required
@@ -102,24 +104,24 @@ def admin_new_contribution_view(request):
                 })
 
             request.session["contribution_draft"] = data
-            return redirect("/admin-panel/contributions/new/?step=2")
+            return redirect(reverse("admin_new_contribution") + "?step=2")
 
         elif step == "2":
             # Confirm and save
             draft = request.session.get("contribution_draft")
             if not draft:
-                return redirect("/admin-panel/contributions/new/?step=1")
+                return redirect(reverse("admin_new_contribution") + "?step=1")
 
             action = request.POST.get("action", "")
             if action == "back":
-                return redirect("/admin-panel/contributions/new/?step=1")
+                return redirect(reverse("admin_new_contribution") + "?step=1")
 
             try:
                 member = Member.objects.get(pk=draft["member_id"])
                 category = ContributionCategory.objects.get(pk=draft["category_id"])
             except (Member.DoesNotExist, ContributionCategory.DoesNotExist):
                 messages.error(request, "Invalid member or category.")
-                return redirect("/admin-panel/contributions/new/?step=1")
+                return redirect(reverse("admin_new_contribution") + "?step=1")
 
             from datetime import date as date_type
             try:
@@ -127,7 +129,7 @@ def admin_new_contribution_view(request):
                 contrib_date = date_type(int(date_parts[0]), int(date_parts[1]), int(date_parts[2]))
             except Exception:
                 messages.error(request, "Invalid date format.")
-                return redirect("/admin-panel/contributions/new/?step=1")
+                return redirect(reverse("admin_new_contribution") + "?step=1")
 
             contribution = Contribution.objects.create(
                 member=member,
@@ -158,7 +160,7 @@ def admin_new_contribution_view(request):
 
             del request.session["contribution_draft"]
             request.session["last_contribution_id"] = contribution.pk
-            return redirect("/admin-panel/contributions/new/?step=3")
+            return redirect(reverse("admin_new_contribution") + "?step=3")
 
     # GET requests
     if step == "1":
@@ -173,12 +175,12 @@ def admin_new_contribution_view(request):
     elif step == "2":
         draft = request.session.get("contribution_draft")
         if not draft:
-            return redirect("/admin-panel/contributions/new/?step=1")
+            return redirect(reverse("admin_new_contribution") + "?step=1")
         try:
             member = Member.objects.get(pk=draft["member_id"])
             category = ContributionCategory.objects.get(pk=draft["category_id"])
         except (Member.DoesNotExist, ContributionCategory.DoesNotExist):
-            return redirect("/admin-panel/contributions/new/?step=1")
+            return redirect(reverse("admin_new_contribution") + "?step=1")
 
         method_label = dict(Contribution.METHOD_CHOICES).get(draft["method"], draft["method"])
         return render(request, "admin/contributions/new_step2.html", {
@@ -199,7 +201,7 @@ def admin_new_contribution_view(request):
             "contribution": contribution,
         })
 
-    return redirect("/admin-panel/contributions/new/?step=1")
+    return redirect(reverse("admin_new_contribution") + "?step=1")
 
 
 @admin_required
