@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}New Contribution — Confirm — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <p class="text-sm text-gray-500 mb-2">Step 2 of 3</p>
+    <h1 class="text-2xl font-bold text-gray-900">Review &amp; Confirm</h1>
+    <div class="flex items-center mt-4 space-x-2">
+      <div class="flex-1 h-2 rounded-full bg-primary"></div>
+      <div class="flex-1 h-2 rounded-full bg-primary"></div>
+      <div class="flex-1 h-2 rounded-full bg-gray-200"></div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-6">Contribution Summary</h2>
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <dt class="text-sm text-gray-500">Member</dt>
+        <dd class="text-base font-semibold text-gray-900 mt-1">{{ member.full_name }}</dd>
+        <dd class="text-sm text-gray-500">{{ member.email }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Amount</dt>
+        <dd class="text-2xl font-bold text-primary mt-1">${{ draft.amount }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Category</dt>
+        <dd class="text-base font-semibold text-gray-900 mt-1">{{ category.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Date</dt>
+        <dd class="text-base font-semibold text-gray-900 mt-1">{{ draft.date }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Payment Method</dt>
+        <dd class="text-base text-gray-900 mt-1">{{ method_label }}</dd>
+      </div>
+      {% if draft.notes %}
+      <div>
+        <dt class="text-sm text-gray-500">Notes</dt>
+        <dd class="text-base text-gray-900 mt-1">{{ draft.notes }}</dd>
+      </div>
+      {% endif %}
+      <div>
+        <dt class="text-sm text-gray-500">Send Thank-You Email</dt>
+        <dd class="text-base text-gray-900 mt-1">{{ draft.send_email|yesno:"Yes,No" }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-sm text-yellow-800">
+    <strong>Please review before confirming.</strong> A receipt number will be automatically assigned.
+  </div>
+
+  <form method="post" action="{% url 'admin_new_contribution' %}?step=2">
+    {% csrf_token %}
+    <div class="flex justify-between">
+      <button type="submit" name="action" value="back" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+        &larr; Back
+      </button>
+      <button type="submit" name="action" value="confirm" class="btn-primary px-8 py-2 rounded-lg text-sm font-semibold">
+        Confirm &amp; Save
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

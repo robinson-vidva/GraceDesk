@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ family.family_name }} — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6 flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">{{ family.family_name }}</h1>
+      <p class="text-gray-500 text-sm mt-1">Family Head: {{ family.head_member.full_name|default:"Not assigned" }}</p>
+    </div>
+    <a href="{% url 'admin_family_edit' family.pk %}" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">Edit Family</a>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-base font-semibold text-gray-900">Family Members ({{ family_members.count }})</h2>
+    </div>
+    {% if family_members %}
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for m in family_members %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-medium">
+            <a href="{% url 'admin_member_detail' m.pk %}" class="text-primary hover:underline">{{ m.full_name }}</a>
+            {% if family.head_member and family.head_member.pk == m.pk %}
+            <span class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Head</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ m.email }}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">{{ m.get_family_role_display }}</td>
+          <td class="px-6 py-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+              {% if m.membership_status == 'active' %}bg-green-100 text-green-800
+              {% elif m.membership_status == 'pending' %}bg-yellow-100 text-yellow-800
+              {% else %}bg-gray-100 text-gray-800{% endif %}">
+              {{ m.get_membership_status_display }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-8 text-center text-gray-500 text-sm">No members in this family yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="mt-6">
+    <a href="{% url 'admin_families' %}" class="text-sm text-primary hover:underline">&larr; Back to Families</a>
+  </div>
+</div>
+{% endblock %}

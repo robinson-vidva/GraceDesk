@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Download Reports — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Download Contribution Reports</h1>
+    <p class="text-gray-500 text-sm mt-1">Download PDF receipts for tax purposes.</p>
+  </div>
+
+  {% if available_years %}
+  <div class="space-y-4">
+    {% for year in available_years %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">{{ year }} Annual Report</h3>
+          <p class="text-sm text-gray-500 mt-1">Complete contribution summary for {{ year }}</p>
+        </div>
+        <a href="{% url 'generate_report' %}?year={{ year }}"
+           class="btn-primary px-5 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <span>Download PDF</span>
+        </a>
+      </div>
+      <!-- Monthly reports -->
+      <div class="mt-4 pt-4 border-t border-gray-100">
+        <p class="text-xs font-medium text-gray-500 mb-3">Monthly Reports</p>
+        <div class="flex flex-wrap gap-2">
+          {% for month_num, month_name in "1,Jan|2,Feb|3,Mar|4,Apr|5,May|6,Jun|7,Jul|8,Aug|9,Sep|10,Oct|11,Nov|12,Dec"|split:"|" %}
+          {% endfor %}
+          {% for m in "1 2 3 4 5 6 7 8 9 10 11 12"|split:" " %}
+          <a href="{% url 'generate_report' %}?year={{ year }}&month={{ m }}"
+             class="px-3 py-1 text-xs border border-primary text-primary rounded-full hover:bg-primary hover:text-white transition-colors">
+            Month {{ m }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+    <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <p class="text-gray-500">No contributions recorded yet. Reports will appear here once contributions are added.</p>
+  </div>
+  {% endif %}
+
+  <div class="mt-6">
+    <a href="{% url 'dashboard' %}" class="text-sm text-primary hover:underline">&larr; Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Categories — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Contribution Categories</h1>
+  </div>
+
+  <!-- Sub-navigation -->
+  <div class="flex space-x-4 mb-6 border-b border-gray-200">
+    <a href="{% url 'admin_settings' %}" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">General</a>
+    <a href="{% url 'admin_categories' %}" class="pb-3 text-sm font-medium text-primary border-b-2 border-primary">Categories</a>
+    <a href="{% url 'admin_bible_verses' %}" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">Bible Verses</a>
+    <a href="{% url 'admin_users' %}" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">Users</a>
+    <a href="{% url 'admin_audit_log' %}" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">Audit Log</a>
+  </div>
+
+  <div class="mb-4 flex justify-end">
+    <a href="{% url 'admin_new_category' %}" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">+ Add Category</a>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {% if categories %}
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for cat in categories %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm text-gray-600">{{ cat.display_order }}</td>
+          <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ cat.name }}</td>
+          <td class="px-6 py-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {% if cat.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-500{% endif %}">
+              {{ cat.is_active|yesno:"Active,Inactive" }}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-sm">
+            <a href="{% url 'admin_edit_category' cat.pk %}" class="text-primary hover:underline">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-8 text-center text-gray-500">No categories yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

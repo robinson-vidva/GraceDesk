@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+    <p class="text-gray-500 text-sm mt-1">{{ church_settings.church_name }}</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <p class="text-sm font-medium text-gray-500">Active Members</p>
+      <p class="text-3xl font-bold text-primary mt-2">{{ total_members }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <p class="text-sm font-medium text-gray-500">Pending Approval</p>
+      <p class="text-3xl font-bold text-yellow-500 mt-2">{{ pending_members }}</p>
+      {% if pending_members > 0 %}
+      <a href="{% url 'admin_pending' %}" class="text-xs text-primary hover:underline mt-2 block">Review now &rarr;</a>
+      {% endif %}
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <p class="text-sm font-medium text-gray-500">Total YTD</p>
+      <p class="text-3xl font-bold text-primary mt-2">${{ total_ytd|floatformat:2 }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <p class="text-sm font-medium text-gray-500">This Month</p>
+      <p class="text-3xl font-bold text-primary mt-2">${{ total_this_month|floatformat:2 }}</p>
+    </div>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <a href="{% url 'admin_new_contribution' %}?step=1" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow text-center">
+      <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+        <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+      </div>
+      <p class="text-sm font-semibold text-gray-900">New Contribution</p>
+    </a>
+    <a href="{% url 'admin_new_member' %}" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow text-center">
+      <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+        <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+        </svg>
+      </div>
+      <p class="text-sm font-semibold text-gray-900">Add Member</p>
+    </a>
+    <a href="{% url 'admin_pending' %}" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow text-center">
+      <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+        <svg class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <p class="text-sm font-semibold text-gray-900">Pending ({{ pending_members }})</p>
+    </a>
+    <a href="{% url 'admin_reports' %}" class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow text-center">
+      <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+        <svg class="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <p class="text-sm font-semibold text-gray-900">Reports</p>
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Recent contributions -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-base font-semibold text-gray-900">Recent Contributions</h2>
+        <a href="{% url 'admin_contributions' %}" class="text-sm text-primary hover:underline">View all</a>
+      </div>
+      {% if recent_contributions %}
+      <div class="divide-y divide-gray-100">
+        {% for c in recent_contributions %}
+        <div class="px-6 py-3 flex justify-between items-center">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ c.member.full_name }}</p>
+            <p class="text-xs text-gray-500">{{ c.category.name }} &bull; {{ c.date|date:"m/d/Y" }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-semibold text-primary">${{ c.amount|floatformat:2 }}</p>
+            <p class="text-xs text-gray-400 font-mono">{{ c.receipt_number }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="px-6 py-8 text-center text-gray-500 text-sm">No contributions yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Recent audit log -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-base font-semibold text-gray-900">Recent Activity</h2>
+        <a href="{% url 'admin_audit_log' %}" class="text-sm text-primary hover:underline">View all</a>
+      </div>
+      {% if recent_audit %}
+      <div class="divide-y divide-gray-100">
+        {% for log in recent_audit %}
+        <div class="px-6 py-3">
+          <p class="text-sm text-gray-700">
+            <span class="font-medium">{{ log.user|default:"System" }}</span>
+            &bull; {{ log.action }}
+            {% if log.entity_type %} {{ log.entity_type }}{% endif %}
+          </p>
+          <p class="text-xs text-gray-400">{{ log.created_at|date:"m/d/Y H:i" }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="px-6 py-8 text-center text-gray-500 text-sm">No recent activity.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

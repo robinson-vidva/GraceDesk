@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Users — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">User Accounts</h1>
+    <p class="text-gray-500 text-sm mt-1">Manage member login accounts</p>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for u in users %}
+          <tr class="hover:bg-gray-50 {% if u == user %}bg-blue-50{% endif %}">
+            <td class="px-6 py-4 text-sm text-gray-900">
+              {{ u.email }}
+              {% if u == user %}<span class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">You</span>{% endif %}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-700">{{ u.full_name }}</td>
+            <td class="px-6 py-4 text-sm">
+              {% if u.member %}
+              <a href="{% url 'admin_member_detail' u.member.pk %}" class="text-primary hover:underline">{{ u.member.full_name }}</a>
+              {% else %}—{% endif %}
+            </td>
+            <td class="px-6 py-4 text-sm">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {% if u.is_admin %}bg-purple-100 text-purple-800{% else %}bg-gray-100 text-gray-600{% endif %}">
+                {{ u.is_admin|yesno:"Admin,Member" }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-sm">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {% if u.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                {{ u.is_active|yesno:"Active,Inactive" }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">{{ u.last_login|date:"m/d/Y"|default:"Never" }}</td>
+            <td class="px-6 py-4 text-sm space-x-2">
+              {% if u != user %}
+              <form method="post" action="{% url 'admin_toggle_user_active' u.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="text-gray-500 hover:text-gray-700 underline text-xs">
+                  {{ u.is_active|yesno:"Deactivate,Activate" }}
+                </button>
+              </form>
+              {% if request.user.can_manage_admins %}
+              <form method="post" action="{% url 'admin_promote_user' u.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="text-primary hover:underline text-xs">
+                  {{ u.is_admin|yesno:"Remove Admin,Make Admin" }}
+                </button>
+              </form>
+              {% endif %}
+              {% else %}
+              <span class="text-gray-400 text-xs">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

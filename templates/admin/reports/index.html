@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Reports — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Reports</h1>
+    <p class="text-gray-500 text-sm mt-1">Generate contribution reports for members or all-church summaries</p>
+  </div>
+
+  <!-- Year Summary -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-base font-semibold text-gray-900">Annual Summaries</h2>
+    </div>
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contributions</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for row in year_totals %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ row.year }}</td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ row.count }}</td>
+          <td class="px-6 py-4 text-sm font-bold text-primary text-right">${{ row.total|floatformat:2 }}</td>
+          <td class="px-6 py-4 text-sm">
+            <a href="{% url 'admin_generate_report' %}?all=1&year={{ row.year }}" class="text-primary hover:underline mr-3">Download All-Church PDF</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Per-member reports -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-base font-semibold text-gray-900">Individual Member Reports ({{ current_year }})</h2>
+    </div>
+    {% if members %}
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reports</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for m in members %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-medium text-gray-900">
+            <a href="{% url 'admin_member_detail' m.pk %}" class="hover:text-primary">{{ m.full_name }}</a>
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ m.email }}</td>
+          <td class="px-6 py-4 text-sm">
+            {% for year in year_totals %}
+            <a href="{% url 'admin_generate_report' %}?member_id={{ m.pk }}&year={{ year.year }}" class="text-primary hover:underline mr-3">{{ year.year }}</a>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-8 text-center text-gray-500 text-sm">No contributions recorded this year.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

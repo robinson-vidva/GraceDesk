@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Contribution Saved — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <p class="text-sm text-gray-500 mb-2">Step 3 of 3</p>
+    <h1 class="text-2xl font-bold text-gray-900">Contribution Saved!</h1>
+    <div class="flex items-center mt-4 space-x-2">
+      <div class="flex-1 h-2 rounded-full bg-primary"></div>
+      <div class="flex-1 h-2 rounded-full bg-primary"></div>
+      <div class="flex-1 h-2 rounded-full bg-primary"></div>
+    </div>
+  </div>
+
+  {% if contribution %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6 text-center">
+    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+    <h2 class="text-xl font-semibold text-gray-900 mb-2">Contribution Recorded</h2>
+    <p class="text-gray-600 mb-4">
+      <span class="text-3xl font-bold text-primary">${{ contribution.amount|floatformat:2 }}</span>
+      <br>
+      <span class="text-sm">for {{ contribution.member.full_name }}</span>
+    </p>
+    <div class="inline-block bg-gray-50 border border-gray-200 rounded-lg px-6 py-3">
+      <p class="text-xs text-gray-500 uppercase tracking-wider">Receipt Number</p>
+      <p class="text-2xl font-mono font-bold text-gray-900 mt-1">{{ contribution.receipt_number }}</p>
+    </div>
+    <div class="mt-4 text-sm text-gray-500">
+      {{ contribution.category.name }} &bull; {{ contribution.date|date:"m/d/Y" }} &bull; {{ contribution.get_method_display }}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="flex flex-col sm:flex-row gap-4">
+    <a href="{% url 'admin_new_contribution' %}?step=1" class="btn-primary px-6 py-2.5 rounded-lg text-sm font-semibold text-center">
+      + Enter Another Contribution
+    </a>
+    <a href="{% url 'admin_contributions' %}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 text-center">
+      View All Contributions
+    </a>
+    {% if contribution %}
+    <a href="{% url 'admin_member_detail' contribution.member.pk %}" class="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 text-center">
+      View Member
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

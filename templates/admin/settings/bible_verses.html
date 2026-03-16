@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Bible Verses — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Bible Verses</h1>
+    <p class="text-gray-500 text-sm mt-1">Verses used in thank-you emails (random selection)</p>
+  </div>
+
+  <!-- Sub-navigation -->
+  <div class="flex space-x-4 mb-6 border-b border-gray-200">
+    <a href="{% url 'admin_settings' %}" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">General</a>
+    <a href="{% url 'admin_categories' %}" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">Categories</a>
+    <a href="{% url 'admin_bible_verses' %}" class="pb-3 text-sm font-medium text-primary border-b-2 border-primary">Bible Verses</a>
+    <a href="{% url 'admin_users' %}" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">Users</a>
+    <a href="{% url 'admin_audit_log' %}" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-700">Audit Log</a>
+  </div>
+
+  <div class="mb-4 flex justify-end">
+    <a href="{% url 'admin_new_bible_verse' %}" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">+ Add Verse</a>
+  </div>
+
+  <div class="space-y-3">
+    {% for verse in verses %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex justify-between items-start">
+      <div class="flex-1">
+        <div class="flex items-center space-x-2 mb-2">
+          <h3 class="font-semibold text-gray-900">{{ verse.reference }}</h3>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {% if verse.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-500{% endif %}">
+            {{ verse.is_active|yesno:"Active,Inactive" }}
+          </span>
+        </div>
+        <p class="text-sm text-gray-600 italic">{{ verse.text }}</p>
+      </div>
+      <a href="{% url 'admin_edit_bible_verse' verse.pk %}" class="ml-4 text-sm text-primary hover:underline flex-shrink-0">Edit</a>
+    </div>
+    {% empty %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-gray-500">No Bible verses added yet.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

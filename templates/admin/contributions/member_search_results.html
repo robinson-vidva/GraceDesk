@@ -1,0 +1,19 @@
+{% if members %}
+<ul class="divide-y divide-gray-200">
+  {% for m in members %}
+  <li>
+    <button type="button"
+      class="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+      onclick="selectMember({{ m.id }}, '{{ m.name|escapejs }}')"
+    >
+      <p class="text-sm font-medium text-gray-900">{{ m.name }}</p>
+      <p class="text-xs text-gray-500">{{ m.email }}</p>
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+{% if q %}
+<p class="px-4 py-3 text-sm text-gray-500">No members found for "{{ q }}"</p>
+{% endif %}
+{% endif %}

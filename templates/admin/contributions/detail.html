@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Receipt {{ contribution.receipt_number }} — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-900">Contribution Detail</h1>
+    <div class="space-x-3">
+      {% if not contribution.is_deleted %}
+      <a href="{% url 'admin_edit_contribution' contribution.pk %}" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">Edit</a>
+      <a href="{% url 'admin_delete_contribution' contribution.pk %}" class="px-4 py-2 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm font-medium hover:bg-red-200">Delete</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+    {% if contribution.is_deleted %}
+    <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-800">
+      <strong>This contribution has been deleted.</strong>
+      {% if contribution.deleted_reason %}<br>Reason: {{ contribution.deleted_reason }}{% endif %}
+    </div>
+    {% endif %}
+
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div>
+        <dt class="text-sm text-gray-500">Receipt Number</dt>
+        <dd class="text-xl font-mono font-bold text-gray-900 mt-1">{{ contribution.receipt_number }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Amount</dt>
+        <dd class="text-2xl font-bold text-primary mt-1">${{ contribution.amount|floatformat:2 }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Member</dt>
+        <dd class="mt-1"><a href="{% url 'admin_member_detail' contribution.member.pk %}" class="text-primary hover:underline font-medium">{{ contribution.member.full_name }}</a></dd>
+        <dd class="text-sm text-gray-500">{{ contribution.member.email }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Category</dt>
+        <dd class="text-base font-semibold text-gray-900 mt-1">{{ contribution.category.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Date</dt>
+        <dd class="text-base text-gray-900 mt-1">{{ contribution.date|date:"F d, Y" }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Method</dt>
+        <dd class="text-base text-gray-900 mt-1">{{ contribution.get_method_display }}</dd>
+      </div>
+      {% if contribution.notes %}
+      <div class="sm:col-span-2">
+        <dt class="text-sm text-gray-500">Notes</dt>
+        <dd class="text-base text-gray-900 mt-1">{{ contribution.notes }}</dd>
+      </div>
+      {% endif %}
+      <div>
+        <dt class="text-sm text-gray-500">Entered By</dt>
+        <dd class="text-base text-gray-900 mt-1">{{ contribution.entered_by|default:"—" }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm text-gray-500">Created At</dt>
+        <dd class="text-base text-gray-900 mt-1">{{ contribution.created_at|date:"m/d/Y H:i" }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="mt-6">
+    <a href="{% url 'admin_contributions' %}" class="text-sm text-primary hover:underline">&larr; Back to Contributions</a>
+  </div>
+</div>
+{% endblock %}

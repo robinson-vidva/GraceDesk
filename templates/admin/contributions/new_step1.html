@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}New Contribution — Step 1 — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6">
+    <p class="text-sm text-gray-500 mb-2">Step 1 of 3</p>
+    <h1 class="text-2xl font-bold text-gray-900">Enter Contribution</h1>
+    <!-- Progress -->
+    <div class="flex items-center mt-4 space-x-2">
+      <div class="flex-1 h-2 rounded-full bg-primary"></div>
+      <div class="flex-1 h-2 rounded-full bg-gray-200"></div>
+      <div class="flex-1 h-2 rounded-full bg-gray-200"></div>
+    </div>
+  </div>
+
+  {% if errors %}
+  <div class="mb-4 bg-red-50 border border-red-300 text-red-700 rounded-md px-4 py-3 text-sm">
+    <ul class="list-disc list-inside">
+      {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'admin_new_contribution' %}?step=1" class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 space-y-5">
+    {% csrf_token %}
+
+    <!-- Member search -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Member *</label>
+      <div class="relative">
+        <input type="text" id="member_search"
+          placeholder="Search member by name or email..."
+          autocomplete="off"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          hx-get="{% url 'member_search' %}"
+          hx-trigger="keyup changed delay:300ms"
+          hx-target="#member_results"
+          hx-include="#member_search"
+          name="q"
+          value="{{ form_data.member_search|default:'' }}"
+        >
+        <input type="hidden" id="member_id" name="member_id" value="{{ form_data.member_id|default:'' }}" required>
+        <div id="member_results" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto"></div>
+      </div>
+      {% if form_data.member_id %}
+      <p id="selected_member" class="text-sm text-green-700 mt-1">Member ID {{ form_data.member_id }} selected</p>
+      {% else %}
+      <p id="selected_member" class="text-sm text-gray-500 mt-1"></p>
+      {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount *</label>
+        <div class="relative">
+          <span class="absolute left-3 top-2 text-gray-500 text-sm">$</span>
+          <input type="number" id="amount" name="amount" step="0.01" min="0.01" required
+            value="{{ form_data.amount|default:'' }}"
+            class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder="0.00">
+        </div>
+      </div>
+      <div>
+        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+        <input type="date" id="date" name="date" required
+          value="{{ form_data.date|default:today }}"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+        <select id="category_id" name="category_id" required
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">— Select Category —</option>
+          {% for cat in categories %}
+          <option value="{{ cat.pk }}" {% if form_data.category_id == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="method" class="block text-sm font-medium text-gray-700 mb-1">Payment Method *</label>
+        <select id="method" name="method" required
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">— Select Method —</option>
+          {% for val, label in method_choices %}
+          <option value="{{ val }}" {% if form_data.method == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+      <textarea id="notes" name="notes" rows="2"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        placeholder="Optional notes (check number, etc.)">{{ form_data.notes|default:'' }}</textarea>
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <input type="checkbox" id="send_email" name="send_email" value="on"
+        {% if form_data.send_email != False %}checked{% endif %}
+        class="h-4 w-4 text-primary border-gray-300 rounded">
+      <label for="send_email" class="text-sm text-gray-700">Send thank-you email to member</label>
+    </div>
+
+    <div class="flex justify-between pt-4 border-t">
+      <a href="{% url 'admin_contributions' %}" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</a>
+      <button type="submit" class="btn-primary px-6 py-2 rounded-lg text-sm font-semibold">
+        Next: Review &rarr;
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function selectMember(id, name) {
+  document.getElementById('member_id').value = id;
+  document.getElementById('member_search').value = name;
+  document.getElementById('selected_member').textContent = 'Selected: ' + name;
+  document.getElementById('member_results').innerHTML = '';
+}
+</script>
+{% endblock %}

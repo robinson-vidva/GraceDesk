@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Contributions — {{ church_settings.church_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-6 flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-900">Contributions</h1>
+    <a href="{% url 'admin_new_contribution' %}?step=1" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">+ New Contribution</a>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+      <div class="lg:col-span-2">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search member or receipt #..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+      </div>
+      <div>
+        <select name="year" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Years</option>
+          {% for y in available_years %}
+          <option value="{{ y.year }}" {% if filter_year == y.year|stringformat:"s" %}selected{% endif %}>{{ y.year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <select name="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.pk }}" {% if filter_category == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <select name="method" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="">All Methods</option>
+          {% for val, label in method_choices %}
+          <option value="{{ val }}" {% if filter_method == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="w-full btn-primary py-2 rounded-lg text-sm font-semibold">Filter</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    <p class="text-sm text-gray-500">Total: <span class="text-lg font-bold text-primary">${{ total|floatformat:2 }}</span>
+    &nbsp;({{ contributions|length }} records)</p>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {% if contributions %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt #</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          {% for c in contributions %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3 text-sm font-mono text-gray-600">
+              <a href="{% url 'admin_contribution_detail' c.pk %}" class="text-primary hover:underline">{{ c.receipt_number }}</a>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-900">
+              <a href="{% url 'admin_member_detail' c.member.pk %}" class="hover:text-primary">{{ c.member.full_name }}</a>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">{{ c.category.name }}</td>
+            <td class="px-4 py-3 text-sm text-gray-600">{{ c.date|date:"m/d/Y" }}</td>
+            <td class="px-4 py-3 text-sm text-gray-500">{{ c.get_method_display }}</td>
+            <td class="px-4 py-3 text-sm font-semibold text-right">${{ c.amount|floatformat:2 }}</td>
+            <td class="px-4 py-3 text-sm">
+              <a href="{% url 'admin_edit_contribution' c.pk %}" class="text-primary hover:underline mr-2">Edit</a>
+              <a href="{% url 'admin_delete_contribution' c.pk %}" class="text-red-500 hover:underline">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="px-6 py-12 text-center text-gray-500">No contributions found.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

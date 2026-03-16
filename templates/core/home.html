@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ church_settings.church_name }} — Welcome{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center px-4 py-16">
+  <div class="max-w-2xl w-full text-center">
+    {% if church_settings.church_logo %}
+      <img src="{{ church_settings.church_logo.url }}" alt="{{ church_settings.church_name }}" class="h-20 w-auto mx-auto mb-6 rounded-xl shadow">
+    {% else %}
+      <div class="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+        <svg class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+      </div>
+    {% endif %}
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">{{ church_settings.church_name }}</h1>
+    <p class="text-lg text-gray-600 mb-8">Member Contribution Portal — View your contributions, download tax receipts, and manage your membership.</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="{% url 'login' %}" class="btn-primary px-8 py-3 rounded-lg text-lg font-semibold shadow hover:shadow-md transition-all">
+        Sign In
+      </a>
+      <a href="{% url 'register' %}" class="bg-white text-primary border-2 border-primary px-8 py-3 rounded-lg text-lg font-semibold shadow hover:shadow-md transition-all">
+        Register
+      </a>
+    </div>
+    {% if church_settings.church_address %}
+    <p class="mt-12 text-gray-500 text-sm">
+      {{ church_settings.church_address }}{% if church_settings.church_city %}, {{ church_settings.church_city }}{% endif %}
+      {% if church_settings.church_state %}, {{ church_settings.church_state }}{% endif %}
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
