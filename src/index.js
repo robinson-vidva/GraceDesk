@@ -10,6 +10,8 @@ import { admin } from './routes/admin.js';
 import { adminContributions } from './routes/admin-contributions.js';
 import { adminSettings } from './routes/admin-settings.js';
 import { runDailyJobs } from './services/scheduled.js';
+import { platform } from './routes/platform.js';
+import { findByCustomDomain } from './services/platform.js';
 
 const app = new Hono();
 
@@ -21,6 +23,25 @@ app.use('*', async (c, next) => {
   await ensureSeeded(c.env);
   await next();
 });
+
+// Custom-domain routing: if the host is a church's custom domain, route
+// visitors into that church. Skipped for platform/asset paths and default hosts.
+app.use('*', async (c, next) => {
+  const hostname = (c.req.header('host') || '').split(':')[0].toLowerCase();
+  const path = c.req.path;
+  const skip = !hostname || hostname === 'localhost' || hostname === '127.0.0.1'
+    || hostname.endsWith('.workers.dev')
+    || path.startsWith('/c/') || path.startsWith('/platform') || path.startsWith('/css/')
+    || path.startsWith('/icons/') || path === '/healthz' || path === '/manifest.webmanifest';
+  if (!skip) {
+    const church = await findByCustomDomain(c.env.DB, hostname);
+    if (church) return c.redirect(`/c/${church.slug}${path === '/' ? '' : path}`);
+  }
+  await next();
+});
+
+// ---- Platform operator console (manages all churches) ----
+app.route('/platform', platform);
 
 // ---- Church sub-app: everything under /c/:slug is tenant-scoped ----
 const church = new Hono();

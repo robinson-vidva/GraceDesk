@@ -93,6 +93,40 @@ export async function updateSessionData(c, sessionId, data) {
   await run(c.env.DB, 'UPDATE sessions SET data = ? WHERE id = ?', JSON.stringify(data), sessionId);
 }
 
+// --- Platform operator sessions (separate cookie + table) -----------------
+
+const PLATFORM_COOKIE = 'gd_platform';
+
+export async function createPlatformSession(c, adminId) {
+  const id = randomHex(32);
+  const expires = new Date(Date.now() + SESSION_TTL_DAYS * 86400_000);
+  await run(c.env.DB, 'INSERT INTO platform_sessions (id, admin_id, expires_at) VALUES (?, ?, ?)',
+    id, adminId, expires.toISOString());
+  setCookie(c, PLATFORM_COOKIE, id, {
+    httpOnly: true, secure: c.req.url.startsWith('https'), sameSite: 'Lax', path: '/',
+    maxAge: SESSION_TTL_DAYS * 86400,
+  });
+  return id;
+}
+
+export async function getPlatformSession(c) {
+  const id = getCookie(c, PLATFORM_COOKIE);
+  if (!id) return null;
+  const row = await one(c.env.DB, 'SELECT * FROM platform_sessions WHERE id = ?', id);
+  if (!row) return null;
+  if (new Date(row.expires_at) < new Date()) {
+    await run(c.env.DB, 'DELETE FROM platform_sessions WHERE id = ?', id);
+    return null;
+  }
+  return { id: row.id, adminId: row.admin_id };
+}
+
+export async function destroyPlatformSession(c) {
+  const id = getCookie(c, PLATFORM_COOKIE);
+  if (id) await run(c.env.DB, 'DELETE FROM platform_sessions WHERE id = ?', id);
+  deleteCookie(c, PLATFORM_COOKIE, { path: '/' });
+}
+
 // SHA-256 hex — used to store reset/invite tokens hashed at rest.
 export async function sha256Hex(str) {
   const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));

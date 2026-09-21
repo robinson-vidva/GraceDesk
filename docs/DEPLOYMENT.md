@@ -50,7 +50,13 @@ npx wrangler secret put ADMIN_EMAIL          # e.g. you@yourchurch.org
 npx wrangler secret put ADMIN_PASSWORD       # a strong password
 npx wrangler secret put RESEND_API_KEY       # optional (platform-wide fallback)
 npx wrangler secret put TURNSTILE_SECRET_KEY # optional
+npx wrangler secret put PLATFORM_ADMIN_EMAIL    # operator console login
+npx wrangler secret put PLATFORM_ADMIN_PASSWORD # operator console password
 ```
+
+The **operator console** at `/platform` lets you see every church, suspend or
+reactivate accounts, and assign custom domains. It is seeded once from the
+`PLATFORM_ADMIN_*` values.
 
 You can also set `APP_URL` (your final URL, used in email links) either as a
 secret or under `[vars]` in `wrangler.toml`.
