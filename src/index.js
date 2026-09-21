@@ -10,6 +10,7 @@ import { admin } from './routes/admin.js';
 import { adminContributions } from './routes/admin-contributions.js';
 import { adminSettings } from './routes/admin-settings.js';
 import { adminMissions } from './routes/admin-missions.js';
+import { adminBroadcast } from './routes/admin-broadcast.js';
 import { runDailyJobs } from './services/scheduled.js';
 import { platform } from './routes/platform.js';
 import { findByCustomDomain } from './services/platform.js';
@@ -65,6 +66,7 @@ church.get('/logo', async (c) => {
 church.route('/admin/contributions', adminContributions);
 church.route('/admin/settings', adminSettings);
 church.route('/admin/missions', adminMissions);
+church.route('/admin/broadcast', adminBroadcast);
 church.route('/admin', admin);
 church.route('/', auth);
 church.route('/', dashboard);

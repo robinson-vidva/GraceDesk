@@ -15,6 +15,7 @@ import {
 } from '../services/members.js';
 import { formatMoney } from '../services/settings.js';
 import { getOrBuildStatement } from '../services/pdf.js';
+import { parseCsv } from '../services/csv.js';
 
 export const admin = new Hono();
 admin.use('*', requireAdmin);
@@ -51,6 +52,7 @@ admin.get('/', async (c) => {
     <div class="wrap-gap mb-2">
       <a href="${b}/contributions/new" class="btn btn-primary btn-sm">Record a contribution</a>
       <a href="${b}/members/new" class="btn btn-ghost btn-sm">Add a member</a>
+      <a href="${b}/broadcast" class="btn btn-ghost btn-sm">Email members</a>
       <a href="${b}/reports" class="btn btn-ghost btn-sm">Reports</a>
     </div>
     ${card(html`<div class="label muted small">Recent activity</div>
@@ -658,24 +660,6 @@ function memberForm(ctx, { values = {}, families = [], action, submitLabel, isNe
       ${isNew ? html`<label class="flex small" style="margin:0.3rem 0 0.8rem"><input type="checkbox" name="create_login" /> Create a login and email an invitation to set a password</label>` : ''}
       ${submitBtn(submitLabel)}
     </form>`);
-}
-
-// Minimal RFC-4180-ish CSV parser (handles quotes, commas, CRLF).
-function parseCsv(text) {
-  const rows = []; let row = []; let field = ''; let inQ = false;
-  const s = (text || '').replace(/\r\n?/g, '\n');
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
-    if (inQ) {
-      if (ch === '"') { if (s[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
-      else field += ch;
-    } else if (ch === '"') inQ = true;
-    else if (ch === ',') { row.push(field); field = ''; }
-    else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else field += ch;
-  }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
-  return rows.filter((r) => r.some((v) => v.trim() !== ''));
 }
 
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);

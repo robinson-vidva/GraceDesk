@@ -9,6 +9,8 @@ import { audit } from '../services/audit.js';
 import { sendEmail, emailShell } from '../services/email.js';
 import { formatMoney } from '../services/settings.js';
 import { fullName, getMember } from '../services/members.js';
+import { parseCsv, headerIndex } from '../services/csv.js';
+import { all as dbAll } from '../db.js';
 import {
   METHODS, METHOD_LABELS, activeCategories, createContribution, getContribution,
   updateContribution, softDeleteContribution, listContributions, randomVerse,
@@ -52,8 +54,10 @@ adminContributions.get('/', async (c) => {
         <button class="btn btn-ghost btn-sm">Filter</button>
       </form>
       <div class="wrap-gap" style="margin-left:auto">
-        <a href="${b}/export.csv${qs ? '?' + qs : ''}" class="btn btn-ghost btn-sm">Export CSV</a>
-        <a href="${b}/new" class="btn btn-primary btn-sm">Record contribution</a>
+        <a href="${b}/import" class="btn btn-ghost btn-sm">Import</a>
+        <a href="${b}/export.csv${qs ? '?' + qs : ''}" class="btn btn-ghost btn-sm">Export</a>
+        <a href="${b}/batch" class="btn btn-ghost btn-sm">Batch entry</a>
+        <a href="${b}/new" class="btn btn-primary btn-sm">Record</a>
       </div>`)}
     <p class="muted small mb-2">${rows.length} contribution(s) · total ${formatMoney(total, cur)}</p>
     ${table([
@@ -173,6 +177,161 @@ adminContributions.post('/', async (c) => {
       <a href="${b}" class="btn btn-ghost btn-sm">All contributions</a>
     </div>`);
   return c.html(adminShell(ctx, '/contributions', 'Saved', body));
+});
+
+// --- Batch entry (Sunday batch) --------------------------------------------
+
+adminContributions.get('/batch', async (c) => {
+  const ctx = c.get('ctx');
+  const members = await activeMembers(c.env.DB, cid(c));
+  const cats = await activeCategories(c.env.DB, cid(c));
+  const b = `${ctx.base}/admin/contributions`;
+  const memberOptions = html`<option value="">—</option>${members.map((m) => html`<option value="${m.id}">${m.last_name}, ${m.first_name}</option>`)}`;
+  const blankRow = html`<tr class="batch-row">
+    <td><select class="input" name="member_id">${memberOptions}</select></td>
+    <td><input class="input" type="number" step="0.01" min="0" name="amount" placeholder="0.00" style="max-width:9rem" /></td></tr>`;
+  const rows = [];
+  for (let i = 0; i < 10; i++) rows.push(blankRow);
+
+  const body = html`
+    <form method="post" action="${b}/batch">
+      ${card(html`
+        <div class="row">
+          <div>${field({ label: 'Date', name: 'date', type: 'date', value: today(), required: true })}</div>
+          <label class="field"><span class="label">Method</span>
+            <select class="input" name="method">${METHODS.map((m) => html`<option value="${m}">${METHOD_LABELS[m]}</option>`)}</select></label>
+        </div>
+        <label class="field"><span class="label">Category (applies to all)</span>
+          <select class="input" name="category_id"><option value="">—</option>
+            ${cats.map((cat) => html`<option value="${cat.id}">${cat.name}</option>`)}</select></label>
+        <label class="flex small" style="margin:0.3rem 0"><input type="checkbox" name="send_emails" checked /> Send a thank-you email for each gift</label>`)}
+      <div class="table-wrap mt-2">
+        <table class="table" id="batch">
+          <thead><tr><th>Member</th><th>Amount</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="wrap-gap mt-2">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addRows(5)">Add 5 rows</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save all</button>
+      </div>
+    </form>
+    <script>
+      function addRows(n){var tb=document.querySelector('#batch tbody');var last=tb.querySelector('.batch-row');for(var i=0;i<n;i++){var r=last.cloneNode(true);r.querySelectorAll('input').forEach(function(x){x.value='';});r.querySelectorAll('select').forEach(function(s){s.selectedIndex=0;});tb.appendChild(r);}}
+    </script>`;
+  return c.html(adminShell(ctx, '/contributions', 'Batch entry', body));
+});
+
+adminContributions.post('/batch', async (c) => {
+  const ctx = c.get('ctx'); const churchId = cid(c);
+  const form = await c.req.parseBody({ all: true });
+  const ids = [].concat(form.member_id || []);
+  const amts = [].concat(form.amount || []);
+  const date = (form.date || today()).toString();
+  const method = (form.method || 'cash').toString();
+  const categoryId = (form.category_id || '').toString();
+  const sendEmails = !!form.send_emails;
+
+  // Member email lookup for thank-you notes.
+  const emailRows = await dbAll(c.env.DB, "SELECT id, first_name, email FROM members WHERE church_id = ? AND email IS NOT NULL", churchId);
+  const emailMap = Object.fromEntries(emailRows.map((m) => [String(m.id), m]));
+  const verse = sendEmails ? await randomVerse(c.env.DB, churchId) : null;
+  const jobs = [];
+
+  let count = 0; let total = 0;
+  for (let i = 0; i < ids.length; i++) {
+    const memberId = (ids[i] || '').toString();
+    const amount = parseFloat(amts[i]);
+    if (!memberId || !(amount > 0)) continue;
+    const { id, receipt } = await createContribution(c.env.DB, churchId, {
+      member_id: memberId, category_id: categoryId, amount, currency: ctx.settings.currency,
+      date, method, entered_by_id: ctx.user.id,
+    });
+    count++; total += amount;
+    const m = emailMap[memberId];
+    if (sendEmails && m) {
+      jobs.push(sendEmail(c.env, ctx.settings, {
+        to: m.email, type: 'thank_you', memberId: m.id, contributionId: id,
+        verseUsed: verse ? verse.reference : null,
+        subject: (ctx.settings.thankyou_subject_template || 'Thank you').replace('{church_name}', ctx.settings.church_name),
+        html: emailShell(ctx.settings, `<p>Dear ${m.first_name},</p>
+          <p>${ctx.settings.thankyou_intro_text || 'Thank you for your generous contribution.'}</p>
+          <p style="font-size:14px"><strong>${formatMoney(amount, ctx.settings.currency)}</strong> · ${date} · Receipt ${receipt}</p>
+          ${verse ? `<blockquote style="border-left:3px solid ${ctx.settings.primary_color};margin:16px 0;padding:4px 0 4px 14px;color:#334155;font-style:italic">"${verse.text}"<br/><span style="font-style:normal;color:#64748b">— ${verse.reference}</span></blockquote>` : ''}`),
+      }));
+    }
+  }
+  if (jobs.length && c.executionCtx) c.executionCtx.waitUntil(Promise.allSettled(jobs));
+  await audit(c, 'create', 'contribution', null, { batch: count, total });
+
+  const body = card(html`
+    ${alertBox('success', `Saved ${count} contribution(s), total ${formatMoney(total, ctx.settings.currency)}.`)}
+    ${sendEmails ? html`<p class="muted small">Thank-you emails are being sent.</p>` : ''}
+    <div class="wrap-gap mt-2">
+      <a href="${ctx.base}/admin/contributions/batch" class="btn btn-primary btn-sm">Another batch</a>
+      <a href="${ctx.base}/admin/contributions" class="btn btn-ghost btn-sm">View contributions</a>
+    </div>`);
+  return c.html(adminShell(ctx, '/contributions', 'Batch saved', body));
+});
+
+// --- CSV import (historical giving) ----------------------------------------
+
+adminContributions.get('/import', (c) => {
+  const ctx = c.get('ctx');
+  const body = card(html`
+    <h2 style="font-size:1.15rem">Import past contributions from CSV</h2>
+    <p class="muted small">Include a header row. Columns: <code>email</code> or <code>name</code> to match the member, plus <code>amount, date, method, category</code>. Dates as YYYY-MM-DD. No emails are sent for imported gifts.</p>
+    <form method="post" action="${ctx.base}/admin/contributions/import" enctype="multipart/form-data" class="mt-1">
+      <input class="input" type="file" name="file" accept=".csv,text/csv" />
+      <p class="muted small mt-1">…or paste CSV:</p>
+      <textarea class="input" name="csv" rows="6" placeholder="email,amount,date,method,category&#10;jane@example.com,100,2025-12-25,check,Monthly Tithe"></textarea>
+      ${submitBtn('Import')}
+    </form>`);
+  return c.html(adminShell(ctx, '/contributions', 'Import contributions', body));
+});
+
+adminContributions.post('/import', async (c) => {
+  const ctx = c.get('ctx'); const churchId = cid(c);
+  const form = await c.req.parseBody();
+  let text = (form.csv || '').toString();
+  const file = form.file;
+  if (file && typeof file === 'object' && file.text) text = await file.text();
+
+  const rows = parseCsv(text);
+  let created = 0; let skipped = 0;
+  if (rows.length > 1) {
+    const idx = headerIndex(rows[0]);
+    const iEmail = idx(['email', 'e-mail']); const iName = idx(['name', 'member', 'full_name']);
+    const iAmount = idx(['amount', 'total']); const iDate = idx(['date']);
+    const iMethod = idx(['method']); const iCategory = idx(['category', 'fund']);
+
+    const members = await dbAll(c.env.DB, 'SELECT id, first_name, last_name, email FROM members WHERE church_id = ?', churchId);
+    const byEmail = Object.fromEntries(members.filter((m) => m.email).map((m) => [m.email.toLowerCase(), m.id]));
+    const byName = Object.fromEntries(members.map((m) => [`${m.first_name} ${m.last_name}`.toLowerCase(), m.id]));
+    const cats = await activeCategories(c.env.DB, churchId);
+    const catByName = Object.fromEntries(cats.map((x) => [x.name.toLowerCase(), x.id]));
+
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      const amount = parseFloat(iAmount >= 0 ? row[iAmount] : '');
+      let memberId = null;
+      if (iEmail >= 0 && row[iEmail]) memberId = byEmail[row[iEmail].trim().toLowerCase()];
+      if (!memberId && iName >= 0 && row[iName]) memberId = byName[row[iName].trim().toLowerCase()];
+      if (!memberId || !(amount > 0)) { skipped++; continue; }
+      const method = (iMethod >= 0 ? row[iMethod] : 'other').trim().toLowerCase().replace(/\s+/g, '_');
+      const catId = iCategory >= 0 && row[iCategory] ? catByName[row[iCategory].trim().toLowerCase()] : null;
+      const date = (iDate >= 0 ? row[iDate] : '').trim() || today();
+      await createContribution(c.env.DB, churchId, {
+        member_id: memberId, category_id: catId || null, amount, currency: ctx.settings.currency,
+        date, method: METHODS.includes(method) ? method : 'other', entered_by_id: ctx.user.id,
+      });
+      created++;
+    }
+  }
+  await audit(c, 'create', 'contribution', null, { imported: created, skipped });
+  const body = card(html`${alertBox('success', `Imported ${created} contribution(s).${skipped ? ` Skipped ${skipped} row(s) with no matching member or amount.` : ''}`)}
+    <a href="${ctx.base}/admin/contributions" class="btn btn-primary btn-sm mt-1">View contributions</a>`);
+  return c.html(adminShell(ctx, '/contributions', 'Import complete', body));
 });
 
 // --- Detail / edit / delete ------------------------------------------------
