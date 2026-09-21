@@ -22,9 +22,9 @@ export async function sendEmail(env, settings, { to, subject, html, replyTo, typ
   const log = async (status, providerId, error) => {
     await run(
       env.DB,
-      `INSERT INTO email_logs (member_id, contribution_id, email_type, subject, recipient_email, provider_id, bible_verse_used, status, error_message, sent_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      memberId ?? null, contributionId ?? null, type || 'other', subject, to,
+      `INSERT INTO email_logs (church_id, member_id, contribution_id, email_type, subject, recipient_email, provider_id, bible_verse_used, status, error_message, sent_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      settings?.church_id ?? null, memberId ?? null, contributionId ?? null, type || 'other', subject, to,
       providerId ?? null, verseUsed ?? null, status, error ?? null,
       status === 'sent' ? new Date().toISOString() : null,
     );

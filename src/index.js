@@ -6,6 +6,7 @@ import { marketing } from './routes/marketing.js';
 import { pages } from './routes/pages.js';
 import { auth } from './routes/auth.js';
 import { dashboard } from './routes/dashboard.js';
+import { admin } from './routes/admin.js';
 
 const app = new Hono();
 
@@ -36,6 +37,7 @@ church.get('/logo', async (c) => {
   });
 });
 
+church.route('/admin', admin);
 church.route('/', auth);
 church.route('/', dashboard);
 church.route('/', pages);
