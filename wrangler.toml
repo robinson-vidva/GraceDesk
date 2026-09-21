@@ -1,0 +1,33 @@
+name = "gracedesk"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets (public/) served directly by the Worker runtime.
+assets = { directory = "./public", binding = "ASSETS" }
+
+# ---------------------------------------------------------------------------
+# Cloudflare D1 (SQLite) — the application database.
+# For local dev, Wrangler creates a local SQLite file automatically; no cloud
+# resource is required. Before deploying, run:  wrangler d1 create gracedesk
+# and paste the returned database_id below.
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "gracedesk"
+database_id = "local"          # replace with real id from `wrangler d1 create gracedesk`
+migrations_dir = "migrations"
+
+# ---------------------------------------------------------------------------
+# Cloudflare R2 — object storage for church logos, member photos, and cached
+# PDF reports. Create with:  wrangler r2 bucket create gracedesk-files
+# ---------------------------------------------------------------------------
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "gracedesk-files"
+
+[vars]
+# Non-secret defaults. Secrets (RESEND_API_KEY, TURNSTILE_SECRET_KEY,
+# SESSION_SECRET, ADMIN_PASSWORD) go in .dev.vars locally and
+# `wrangler secret put` in production.
+APP_NAME = "GraceDesk"

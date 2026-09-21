@@ -1,0 +1,19 @@
+# Copy to .dev.vars for local development (loaded automatically by `wrangler dev`).
+# In production these are set with `wrangler secret put <NAME>`.
+
+# Default admin created on first boot when the DB has no users. Change after login.
+ADMIN_EMAIL=admin@gracedesk.local
+ADMIN_PASSWORD=changeme123
+
+# Transactional email (Resend). Without a key, email is skipped and password-reset
+# / invite links are shown on screen in dev.
+RESEND_API_KEY=
+EMAIL_FROM=GraceDesk <noreply@example.org>
+
+# Cloudflare Turnstile (bot protection on register/login). Without both keys,
+# forms work but are not bot-protected (fine for local dev).
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+
+# Canonical public URL used in email links (optional; derived from request if unset).
+APP_URL=http://localhost:8787
