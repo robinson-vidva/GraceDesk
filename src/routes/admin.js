@@ -274,6 +274,10 @@ admin.get('/members/:id', async (c) => {
      WHERE ct.church_id = ? AND ct.member_id = ? AND ct.is_deleted = 0 ORDER BY ct.date DESC LIMIT 20`, churchId, id);
   const cur = ctx.settings.currency;
   const phones = parsePhones(m.phones);
+  const notes = ctx.settings.notes_enabled
+    ? await all(c.env.DB, `SELECT n.*, u.first_name, u.last_name FROM member_notes n
+        LEFT JOIN users u ON u.id = n.created_by_id WHERE n.church_id = ? AND n.member_id = ? ORDER BY n.created_at DESC`, churchId, id)
+    : null;
 
   const body = html`
     <div class="between mb-2">
@@ -302,8 +306,39 @@ admin.get('/members/:id', async (c) => {
           { head: 'Category', cell: (x) => x.category || '—' },
           { head: 'Receipt', cell: (x) => x.receipt_number || '—' },
         ], contribs) : empty('No contributions recorded yet.')}`)}
-    </div>`;
+    </div>
+    ${notes !== null ? card(html`
+      <div class="label muted small mb-2">Pastoral notes <span class="badge badge-muted">private</span></div>
+      <form method="post" action="${b}/members/${id}/notes" class="mb-2">
+        <textarea class="input" name="body" rows="2" placeholder="Add a private note…" required></textarea>
+        <div class="mt-1"><button class="btn btn-primary btn-sm">Add note</button></div>
+      </form>
+      ${notes.length ? html`<div class="stack">${notes.map((n) => html`
+        <div class="between" style="align-items:flex-start;gap:0.6rem;border-top:1px solid var(--line);padding-top:0.5rem">
+          <div><div class="small">${n.body}</div>
+            <div class="muted" style="font-size:0.75rem">${[n.first_name, n.last_name].filter(Boolean).join(' ') || 'Admin'} · ${fmtDateTime(n.created_at)}</div></div>
+          <form method="post" action="${b}/members/${id}/notes/${n.id}/delete" onsubmit="return confirm('Delete this note?')"><button class="btn btn-ghost btn-sm link-danger">Delete</button></form>
+        </div>`)}</div>` : html`<p class="muted small">No notes yet.</p>`}`, 'mt-2') : ''}`;
   return c.html(adminShell(ctx, '/members', fullName(m), body));
+});
+
+admin.post('/members/:id/notes', async (c) => {
+  const ctx = c.get('ctx'); const id = c.req.param('id');
+  if (!ctx.settings.notes_enabled) return c.redirect(`${ctx.base}/admin/members/${id}`);
+  const form = await c.req.parseBody();
+  const bodyText = (form.body || '').toString().trim();
+  if (bodyText) {
+    await run(c.env.DB, 'INSERT INTO member_notes (church_id, member_id, body, created_by_id) VALUES (?, ?, ?, ?)', cid(c), id, bodyText, ctx.user.id);
+    await audit(c, 'create', 'member_note', id);
+  }
+  return c.redirect(`${ctx.base}/admin/members/${id}`);
+});
+
+admin.post('/members/:id/notes/:noteId/delete', async (c) => {
+  const ctx = c.get('ctx'); const id = c.req.param('id');
+  await run(c.env.DB, 'DELETE FROM member_notes WHERE church_id=? AND id=? AND member_id=?', cid(c), c.req.param('noteId'), id);
+  await audit(c, 'delete', 'member_note', id);
+  return c.redirect(`${ctx.base}/admin/members/${id}`);
 });
 
 admin.get('/members/:id/edit', async (c) => {

@@ -51,8 +51,18 @@ const SETTABLE = new Set([
   'church_website', 'ein_tax_id', 'currency', 'timezone', 'date_format',
   'resend_api_key', 'default_from_email', 'reply_to_email',
   'thankyou_subject_template', 'thankyou_intro_text', 'email_image_url',
-  'turnstile_site_key', 'turnstile_secret_key', 'church_logo_key', 'missions_enabled',
+  'turnstile_site_key', 'turnstile_secret_key', 'church_logo_key',
+  'missions_enabled', 'pledges_enabled', 'groups_enabled', 'attendance_enabled', 'notes_enabled',
 ]);
+
+// Optional modules: [settings key, label, description]. All default off.
+export const MODULES = [
+  ['missions_enabled', 'Missions', 'Track supported mission churches and schools, their headcounts, and support sent.'],
+  ['pledges_enabled', 'Pledges', 'Let members commit an annual giving amount and track progress against it.'],
+  ['groups_enabled', 'Groups', 'Organize members into ministries or small groups and email a whole group.'],
+  ['attendance_enabled', 'Attendance', 'Record weekly service head counts (totals only, no individual tracking).'],
+  ['notes_enabled', 'Pastoral notes', 'Keep private per-member care notes. Sensitive — visible to admins only.'],
+];
 
 export async function updateSettings(db, churchId, fields) {
   const keys = Object.keys(fields).filter((k) => SETTABLE.has(k));

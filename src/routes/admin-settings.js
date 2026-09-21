@@ -6,7 +6,7 @@ import { card } from '../views/layout.js';
 import { field, submitBtn, alertBox } from '../views/forms.js';
 import { audit } from '../services/audit.js';
 import {
-  getSettings, updateSettings, updateChurchName,
+  getSettings, updateSettings, updateChurchName, MODULES,
   listCategories, addCategory, renameCategory, toggleCategory,
   listVerses, addVerse, toggleVerse, deleteVerse,
 } from '../services/settings.js';
@@ -61,10 +61,16 @@ adminSettings.get('/', async (c) => {
       </form>`)}
     ${card(html`
       <div class="label muted small mb-2">Optional modules</div>
-      <form method="post" action="${ctx.base}/admin/settings/modules" class="between" style="gap:0.6rem">
-        <label class="flex small" style="margin:0"><input type="checkbox" name="missions_enabled" ${raw(s.missions_enabled ? 'checked' : '')} />
-          Missions tracker — track supported mission churches and schools, their headcounts, and support sent</label>
-        <button class="btn btn-ghost btn-sm">Save</button>
+      <p class="muted small">All off by default. Turn on only what your church needs.</p>
+      <form method="post" action="${ctx.base}/admin/settings/modules">
+        <div class="stack mt-1">
+          ${MODULES.map(([key, label, desc]) => html`
+            <label class="flex" style="align-items:flex-start;gap:0.5rem">
+              <input type="checkbox" name="${key}" ${raw(s[key] ? 'checked' : '')} style="margin-top:0.2rem" />
+              <span><strong class="small">${label}</strong><span class="muted small"> — ${desc}</span></span>
+            </label>`)}
+        </div>
+        <div class="mt-2">${submitBtn('Save modules')}</div>
       </form>`)}
     ${card(html`
       <div class="label muted small mb-2">Church logo</div>
@@ -93,8 +99,10 @@ adminSettings.post('/', async (c) => {
 adminSettings.post('/modules', async (c) => {
   const ctx = c.get('ctx'); const churchId = cid(c);
   const form = await c.req.parseBody();
-  await updateSettings(c.env.DB, churchId, { missions_enabled: form.missions_enabled ? 1 : 0 });
-  await audit(c, 'settings_change', 'settings', churchId, { module: 'missions', on: !!form.missions_enabled });
+  const fields = {};
+  for (const [key] of MODULES) fields[key] = form[key] ? 1 : 0;
+  await updateSettings(c.env.DB, churchId, fields);
+  await audit(c, 'settings_change', 'settings', churchId, { modules: fields });
   return c.redirect(`${ctx.base}/admin/settings?saved=1`);
 });
 

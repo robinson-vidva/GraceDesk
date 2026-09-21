@@ -51,6 +51,17 @@ export function requireAdmin(c, next) {
   return next();
 }
 
+// Gate a whole module behind its per-church settings toggle.
+export function requireModule(key) {
+  return (c, next) => {
+    const ctx = c.get('ctx');
+    if (!ctx.user) return c.redirect(`${ctx.base}/login`);
+    if (!ctx.user.is_admin) return c.text('Forbidden', 403);
+    if (!ctx.settings?.[key]) return c.redirect(`${ctx.base}/admin/settings`);
+    return next();
+  };
+}
+
 export function requireSuperAdmin(c, next) {
   const ctx = c.get('ctx');
   if (!ctx.user || !ctx.user.can_manage_admins) return c.text('Forbidden', 403);
