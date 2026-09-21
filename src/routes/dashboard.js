@@ -14,7 +14,6 @@ import {
 import { getOrBuildStatement } from '../services/pdf.js';
 
 export const dashboard = new Hono();
-dashboard.use('*', requireAuth);
 
 const cid = (c) => c.get('ctx').church.id;
 const MONTHS = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -33,7 +32,7 @@ async function isFamilyHead(db, churchId, member) {
 
 // --- Dashboard -------------------------------------------------------------
 
-dashboard.get('/dashboard', async (c) => {
+dashboard.get('/dashboard', requireAuth, async (c) => {
   const ctx = c.get('ctx');
   const b = ctx.base;
   const member = await currentMember(c);
@@ -75,7 +74,7 @@ dashboard.get('/dashboard', async (c) => {
 
 // --- My contributions ------------------------------------------------------
 
-dashboard.get('/contributions', async (c) => {
+dashboard.get('/contributions', requireAuth, async (c) => {
   const ctx = c.get('ctx');
   const member = await currentMember(c);
   const cur = ctx.settings.currency;
@@ -126,7 +125,7 @@ dashboard.get('/contributions', async (c) => {
 
 // --- Reports (download statements) -----------------------------------------
 
-dashboard.get('/reports', async (c) => {
+dashboard.get('/reports', requireAuth, async (c) => {
   const ctx = c.get('ctx');
   const member = await currentMember(c);
   const b = ctx.base;
@@ -154,7 +153,7 @@ dashboard.get('/reports', async (c) => {
   return c.html(layout({ ...ctx, title: 'Statements' }, body));
 });
 
-dashboard.get('/reports/download', async (c) => {
+dashboard.get('/reports/download', requireAuth, async (c) => {
   const ctx = c.get('ctx');
   const member = await currentMember(c);
   if (!member) return c.text('No giving record linked to your account.', 404);
@@ -173,13 +172,13 @@ dashboard.get('/reports/download', async (c) => {
 
 // --- Profile ---------------------------------------------------------------
 
-dashboard.get('/profile', async (c) => {
+dashboard.get('/profile', requireAuth, async (c) => {
   const ctx = c.get('ctx');
   const member = await currentMember(c);
   return c.html(layout({ ...ctx, title: 'My profile' }, profileView(ctx, member)));
 });
 
-dashboard.post('/profile', async (c) => {
+dashboard.post('/profile', requireAuth, async (c) => {
   const ctx = c.get('ctx');
   const member = await currentMember(c);
   if (!member) return c.redirect(`${ctx.base}/profile`);
