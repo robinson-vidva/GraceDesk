@@ -9,6 +9,7 @@ import { dashboard } from './routes/dashboard.js';
 import { admin } from './routes/admin.js';
 import { adminContributions } from './routes/admin-contributions.js';
 import { adminSettings } from './routes/admin-settings.js';
+import { runDailyJobs } from './services/scheduled.js';
 
 const app = new Hono();
 
@@ -57,4 +58,10 @@ app.onError((err, c) => {
   return c.text('Something went wrong', 500);
 });
 
-export default app;
+// Worker entry: HTTP via Hono, plus the daily cron trigger.
+export default {
+  fetch: app.fetch,
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runDailyJobs(env));
+  },
+};

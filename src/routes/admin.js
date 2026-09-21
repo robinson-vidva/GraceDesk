@@ -79,7 +79,10 @@ admin.get('/members', async (c) => {
         </select>
         <button class="btn btn-ghost btn-sm" type="submit">Search</button>
       </form>
-      <a href="${b}/members/new" class="btn btn-primary btn-sm" style="margin-left:auto">Add member</a>`)}
+      <div class="wrap-gap" style="margin-left:auto">
+        <a href="${b}/members/import" class="btn btn-ghost btn-sm">Import CSV</a>
+        <a href="${b}/members/new" class="btn btn-primary btn-sm">Add member</a>
+      </div>`)}
     ${table([
       { head: 'Name', cell: (m) => html`<a href="${b}/members/${m.id}">${fullName(m)}</a>` },
       { head: 'Email', cell: (m) => m.email || html`<span class="muted">—</span>` },
@@ -154,6 +157,63 @@ admin.post('/members/:id/reactivate', async (c) => {
   await setMemberStatus(c.env.DB, churchId, id, 'active');
   await audit(c, 'update', 'member', id, { reactivated: true });
   return c.redirect(`${ctx.base}/admin/members/${id}`);
+});
+
+// --- Member CSV import -----------------------------------------------------
+
+admin.get('/members/import', (c) => {
+  const ctx = c.get('ctx');
+  const b = `${ctx.base}/admin/members`;
+  const body = card(html`
+    <h2 style="font-size:1.15rem">Import members from CSV</h2>
+    <p class="muted small">Include a header row. Recognized columns: <code>first_name, last_name, email, phone, city, state</code>. Everyone is imported as an active member (no login).</p>
+    <form method="post" action="${b}/import" enctype="multipart/form-data" class="mt-1">
+      <input class="input" type="file" name="file" accept=".csv,text/csv" />
+      <p class="muted small mt-1">…or paste CSV:</p>
+      <textarea class="input" name="csv" rows="6" placeholder="first_name,last_name,email,phone&#10;Jane,Doe,jane@example.com,555-1234"></textarea>
+      ${submitBtn('Import')}
+    </form>`);
+  return c.html(adminShell(ctx, '/members', 'Import members', body));
+});
+
+admin.post('/members/import', async (c) => {
+  const ctx = c.get('ctx'); const churchId = cid(c);
+  const form = await c.req.parseBody();
+  let textCsv = (form.csv || '').toString();
+  const file = form.file;
+  if (file && typeof file === 'object' && file.text) textCsv = await file.text();
+
+  const rows = parseCsv(textCsv);
+  let created = 0; let skipped = 0;
+  if (rows.length) {
+    const header = rows[0].map((h) => h.trim().toLowerCase().replace(/\s+/g, '_'));
+    const idx = (names) => names.map((n) => header.indexOf(n)).find((i) => i >= 0) ?? -1;
+    const iFirst = idx(['first_name', 'first', 'firstname']);
+    const iLast = idx(['last_name', 'last', 'lastname']);
+    const iEmail = idx(['email', 'e-mail']);
+    const iPhone = idx(['phone', 'phone_number', 'mobile']);
+    const iCity = idx(['city']); const iState = idx(['state']);
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      const first = (iFirst >= 0 ? row[iFirst] : '')?.trim();
+      const last = (iLast >= 0 ? row[iLast] : '')?.trim();
+      if (!first || !last) { skipped++; continue; }
+      const phone = iPhone >= 0 ? (row[iPhone] || '').trim() : '';
+      await createMember(c.env.DB, churchId, {
+        first_name: first, last_name: last,
+        email: iEmail >= 0 ? (row[iEmail] || '').trim().toLowerCase() : '',
+        phones: phone ? [phone] : [],
+        city: iCity >= 0 ? (row[iCity] || '').trim() : '',
+        state: iState >= 0 ? (row[iState] || '').trim() : '',
+        membership_status: 'active',
+      });
+      created++;
+    }
+  }
+  await audit(c, 'create', 'member', null, { imported: created, skipped });
+  const body = card(html`${alertBox('success', `Imported ${created} member(s).${skipped ? ` Skipped ${skipped} row(s) missing a name.` : ''}`)}
+    <a href="${ctx.base}/admin/members" class="btn btn-primary btn-sm mt-1">View members</a>`);
+  return c.html(adminShell(ctx, '/members', 'Import complete', body));
 });
 
 // --- Member create ---------------------------------------------------------
@@ -598,6 +658,24 @@ function memberForm(ctx, { values = {}, families = [], action, submitLabel, isNe
       ${isNew ? html`<label class="flex small" style="margin:0.3rem 0 0.8rem"><input type="checkbox" name="create_login" /> Create a login and email an invitation to set a password</label>` : ''}
       ${submitBtn(submitLabel)}
     </form>`);
+}
+
+// Minimal RFC-4180-ish CSV parser (handles quotes, commas, CRLF).
+function parseCsv(text) {
+  const rows = []; let row = []; let field = ''; let inQ = false;
+  const s = (text || '').replace(/\r\n?/g, '\n');
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inQ) {
+      if (ch === '"') { if (s[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+      else field += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === ',') { row.push(field); field = ''; }
+    else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else field += ch;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((v) => v.trim() !== ''));
 }
 
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);

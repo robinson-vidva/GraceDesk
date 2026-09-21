@@ -26,6 +26,10 @@ migrations_dir = "migrations"
 binding = "FILES"
 bucket_name = "gracedesk-files"
 
+# Daily jobs: birthday/anniversary greetings, and monthly summaries on the 1st.
+[triggers]
+crons = ["0 13 * * *"]
+
 [vars]
 # Non-secret defaults. Secrets (RESEND_API_KEY, TURNSTILE_SECRET_KEY,
 # SESSION_SECRET, ADMIN_PASSWORD) go in .dev.vars locally and

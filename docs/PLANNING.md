@@ -1,5 +1,14 @@
 # GraceDesk — Planning & Architecture
 
+> **Architecture note (current build).** GraceDesk now runs as a **multi-tenant
+> service on Cloudflare** (Workers + Hono + D1 + R2), not a per-church install.
+> Many churches share one deployment: each is a tenant reached at `/c/<slug>/…`,
+> with all data scoped by `church_id` (pool model). Churches self-serve sign up
+> at `/`. The user flows, schema fields, and email templates below still apply
+> per tenant; only the hosting model and the addition of a `churches` table
+> differ from the original single-church design. See the README and
+> DEPLOYMENT.md for the stack and setup.
+
 ## What GraceDesk Is
 
 A standalone, self-hosted, open-source church contribution tracker and member portal. Churches install their own instance, customize it with their branding, and use it to track member contributions and communicate via email.
