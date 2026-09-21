@@ -43,6 +43,10 @@ admin.get('/', async (c) => {
   const b = `${ctx.base}/admin`;
 
   const body = html`
+    <form method="get" action="${b}/search" class="toolbar mb-2" style="margin-bottom:1rem">
+      <input class="input" type="search" name="q" placeholder="Search members, receipts…" style="max-width:24rem" />
+      <button class="btn btn-ghost btn-sm">Search</button>
+    </form>
     <div class="tiles mb-2">
       ${tile('Pending approvals', pending, pending ? `${b}/members/pending` : null)}
       ${tile('Active members', active, `${b}/members`)}
@@ -61,6 +65,42 @@ admin.get('/', async (c) => {
           ${r.action} ${r.entity_type || ''} <span class="muted">· ${fmtWhen(r.created_at)}</span></div>`)}</div>`
         : html`<p class="muted small mt-1">No activity yet.</p>`}`)}`;
   return c.html(adminShell(ctx, '', 'Overview', body));
+});
+
+// --- Global search ---------------------------------------------------------
+
+admin.get('/search', async (c) => {
+  const ctx = c.get('ctx'); const churchId = cid(c); const cur = ctx.settings.currency;
+  const q = (c.req.query('q') || '').trim();
+  const b = ctx.base;
+  let members = []; let contribs = [];
+  if (q) {
+    members = await listMembers(c.env.DB, churchId, { q });
+    contribs = await all(c.env.DB, `SELECT ct.*, m.first_name, m.last_name FROM contributions ct
+      JOIN members m ON m.id = ct.member_id
+      WHERE ct.church_id = ? AND ct.is_deleted = 0 AND (ct.receipt_number LIKE ? OR m.first_name LIKE ? OR m.last_name LIKE ?)
+      ORDER BY ct.date DESC LIMIT 25`, churchId, `%${q}%`, `%${q}%`, `%${q}%`);
+  }
+  const body = html`
+    <form method="get" action="${b}/admin/search" class="toolbar mb-2">
+      <input class="input" type="search" name="q" value="${q}" placeholder="Search members, receipts…" style="max-width:24rem" autofocus />
+      <button class="btn btn-primary btn-sm">Search</button>
+    </form>
+    ${!q ? empty('Type a name, email, or receipt number.') : html`
+      ${card(html`<div class="label muted small mb-2">Members (${members.length})</div>
+        ${members.length ? table([
+          { head: 'Name', cell: (m) => html`<a href="${b}/admin/members/${m.id}">${fullName(m)}</a>` },
+          { head: 'Email', cell: (m) => m.email || '—' },
+          { head: 'Status', cell: (m) => badge(m.membership_status) },
+        ], members) : empty('No members matched.')}`)}
+      <div class="mt-2">${card(html`<div class="label muted small mb-2">Contributions (${contribs.length})</div>
+        ${contribs.length ? table([
+          { head: 'Date', cell: (r) => r.date },
+          { head: 'Member', cell: (r) => `${r.first_name} ${r.last_name}` },
+          { head: 'Amount', cell: (r) => formatMoney(r.amount, r.currency || cur) },
+          { head: 'Receipt', cell: (r) => html`<a href="${b}/admin/contributions/${r.id}">${r.receipt_number || '—'}</a>` },
+        ], contribs) : empty('No contributions matched.')}`)}</div>`}`;
+  return c.html(adminShell(ctx, '', q ? `Search: ${q}` : 'Search', body));
 });
 
 // --- Members list ----------------------------------------------------------
@@ -590,6 +630,64 @@ admin.get('/audit', async (c) => {
   ], rows, 'No activity logged yet.');
   return c.html(adminShell(ctx, '/audit', 'Audit log', body));
 });
+
+// --- Email log -------------------------------------------------------------
+
+admin.get('/emails', async (c) => {
+  const ctx = c.get('ctx');
+  const rows = await all(c.env.DB, 'SELECT * FROM email_logs WHERE church_id = ? ORDER BY id DESC LIMIT 200', cid(c));
+  const body = table([
+    { head: 'When', cell: (r) => fmtDateTime(r.sent_at || r.created_at) },
+    { head: 'Type', cell: (r) => (r.email_type || '').replace('_', ' ') },
+    { head: 'To', cell: (r) => r.recipient_email || '—' },
+    { head: 'Subject', cell: (r) => html`<span class="small">${r.subject || ''}</span>` },
+    { head: 'Status', cell: (r) => emailStatus(r.status) },
+  ], rows, 'No emails sent yet.');
+  return c.html(adminShell(ctx, '/settings', 'Email log', html`
+    <p class="small"><a href="${ctx.base}/admin/settings/email">← Email settings</a></p>${body}`));
+});
+
+// --- Data export (owner only) ----------------------------------------------
+
+admin.get('/export.json', requireSuperAdmin, async (c) => {
+  const churchId = cid(c);
+  const dump = async (sql, ...p) => (await c.env.DB.prepare(sql).bind(...p).all()).results || [];
+  const data = {
+    exported_at: new Date().toISOString(),
+    church: await one(c.env.DB, 'SELECT * FROM churches WHERE id = ?', churchId),
+    // Exclude stored secrets (Resend / Turnstile keys) from the backup.
+    settings: await one(c.env.DB, `SELECT id, church_id, church_logo_key, primary_color,
+      church_address_line1, church_address_line2, church_city, church_state, church_zip,
+      church_country, church_phone, church_email, church_website, ein_tax_id, currency,
+      timezone, date_format, default_from_email, reply_to_email, thankyou_subject_template,
+      thankyou_intro_text, email_image_url, missions_enabled, pledges_enabled, groups_enabled,
+      attendance_enabled, notes_enabled, created_at, updated_at
+      FROM church_settings WHERE church_id = ?`, churchId),
+    members: await dump('SELECT * FROM members WHERE church_id = ?', churchId),
+    families: await dump('SELECT * FROM families WHERE church_id = ?', churchId),
+    users: await dump('SELECT id, email, first_name, last_name, is_admin, can_manage_admins, is_active, member_id, last_login, created_at FROM users WHERE church_id = ?', churchId),
+    categories: await dump('SELECT * FROM contribution_categories WHERE church_id = ?', churchId),
+    contributions: await dump('SELECT * FROM contributions WHERE church_id = ?', churchId),
+    bible_verses: await dump('SELECT * FROM bible_verses WHERE church_id = ?', churchId),
+    pledges: await dump('SELECT * FROM pledges WHERE church_id = ?', churchId),
+    groups: await dump('SELECT * FROM member_groups WHERE church_id = ?', churchId),
+    group_memberships: await dump('SELECT * FROM group_memberships WHERE church_id = ?', churchId),
+    attendance: await dump('SELECT * FROM attendance WHERE church_id = ?', churchId),
+    mission_sites: await dump('SELECT * FROM mission_sites WHERE church_id = ?', churchId),
+    mission_support: await dump('SELECT * FROM mission_support WHERE church_id = ?', churchId),
+    email_logs: await dump('SELECT * FROM email_logs WHERE church_id = ?', churchId),
+  };
+  await audit(c, 'export', 'church', churchId, { full_backup: true });
+  return new Response(JSON.stringify(data, null, 2), {
+    headers: { 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="gracedesk-${ctx0(c)}-${new Date().toISOString().slice(0, 10)}.json"` },
+  });
+});
+function ctx0(c) { return (c.get('ctx').church.slug || 'export'); }
+
+function emailStatus(status) {
+  const map = { sent: 'ok', delivered: 'ok', opened: 'ok', queued: 'muted', skipped: 'muted', failed: 'warn', bounced: 'warn', complained: 'warn' };
+  return html`<span class="badge badge-${map[status] || 'muted'}">${status || 'queued'}</span>`;
+}
 
 // --- helpers ---------------------------------------------------------------
 

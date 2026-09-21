@@ -19,12 +19,17 @@ export function layout(ctx, body) {
   <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/app.css" />
   <style>:root { --brand: ${raw(brand)}; --brand-ink: color-mix(in srgb, ${raw(brand)} 78%, #000); }</style>
+  <script>try{var t=localStorage.getItem('gd-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 </head>
 <body>
   ${header(ctx)}
   ${ctx.flash ? flashBanner(ctx.flash) : ''}
   <main class="main"><div class="container">${body}</div></main>
   ${footer(ctx)}
+  <script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(function(){}); }
+    function gdToggleTheme(){var el=document.documentElement;var next=el.getAttribute('data-theme')==='dark'?'light':'dark';el.setAttribute('data-theme',next);try{localStorage.setItem('gd-theme',next);}catch(e){}}
+  </script>
 </body>
 </html>`;
 }
@@ -72,7 +77,8 @@ function footer(ctx) {
       <div>
         ${s.church_email ? html`<a href="mailto:${s.church_email}">${s.church_email}</a>&nbsp;&nbsp;` : ''}
         ${s.church_phone ? html`<span class="muted">${s.church_phone}</span>&nbsp;&nbsp;` : ''}
-        <a href="${base}/terms">Terms</a>
+        <a href="${base}/terms">Terms</a>&nbsp;&nbsp;
+        <button type="button" onclick="gdToggleTheme()" style="background:none;border:none;color:var(--muted);cursor:pointer;font:inherit;padding:0;text-decoration:underline">Theme</button>
       </div>
       <div class="muted">© ${year} ${s.church_name || 'GraceDesk'} · Powered by GraceDesk</div>
     </div>

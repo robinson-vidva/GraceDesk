@@ -78,7 +78,11 @@ adminSettings.get('/', async (c) => {
       <form method="post" action="${ctx.base}/admin/settings/logo" enctype="multipart/form-data" class="wrap-gap">
         <input class="input" type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" required style="width:auto" />
         <button class="btn btn-ghost btn-sm">Upload</button>
-      </form>`)}`;
+      </form>`)}
+    ${ctx.user.can_manage_admins ? card(html`
+      <div class="label muted small mb-2">Data</div>
+      <p class="muted small">Download a full backup of this church's data as JSON. Your data is yours.</p>
+      <a href="${ctx.base}/admin/export.json" class="btn btn-ghost btn-sm mt-1">Export all data</a>`) : ''}`;
   return c.html(adminShell(ctx, '/settings', 'Settings', body));
 });
 
@@ -135,7 +139,8 @@ adminSettings.get('/email', async (c) => {
         <textarea class="input" name="thankyou_intro_text" rows="3">${s.thankyou_intro_text || ''}</textarea></label>
       ${field({ label: 'Email banner image URL', name: 'email_image_url', value: s.email_image_url || '' })}
       ${submitBtn('Save email settings')}
-    </form>`)}`;
+    </form>
+    <p class="small mt-2"><a href="${ctx.base}/admin/emails">View email log &amp; delivery status →</a></p>`)}`;
   return c.html(adminShell(ctx, '/settings', 'Settings', body));
 });
 

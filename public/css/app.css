@@ -10,11 +10,27 @@
   --muted: #6d675e;
   --line: #e8e1d5;           /* warm hairline */
   --line-strong: #d8cfbf;
+  --subtle: #fbf9f5;         /* table head / hover / ghost hover */
   --danger: #9a3b34;
   --ok: #3a6b4f;
   --radius: 9px;
   --shadow: 0 1px 2px rgba(41, 37, 31, 0.05);
   --maxw: 60rem;
+}
+
+/* Dark mode: follow the OS unless the viewer has chosen light, and honor an
+   explicit data-theme="dark" toggle. Brand accent is unchanged. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1613; --surface: #241f1b; --ink: #efe9e0; --muted: #a89f92;
+    --line: #38312a; --line-strong: #4a4139; --subtle: #2c2621;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1613; --surface: #241f1b; --ink: #efe9e0; --muted: #a89f92;
+  --line: #38312a; --line-strong: #4a4139; --subtle: #2c2621;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 * { box-sizing: border-box; }
@@ -93,7 +109,7 @@ p { margin: 0 0 0.9rem; }
 .btn-primary { background: var(--brand); color: #fff; }
 .btn-primary:hover { background: var(--brand-ink); color: #fff; }
 .btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
-.btn-ghost:hover { background: #f3ede2; color: var(--ink); }
+.btn-ghost:hover { background: var(--subtle); color: var(--ink); }
 .btn-block { display: block; width: 100%; }
 
 /* Cards ------------------------------------------------------------------- */
@@ -114,7 +130,7 @@ p { margin: 0 0 0.9rem; }
 .input {
   width: 100%; border: 1px solid var(--line-strong); border-radius: var(--radius);
   padding: 0.6rem 0.7rem; font-size: 0.98rem; font-family: inherit; color: var(--ink);
-  background: #fff;
+  background: var(--surface);
 }
 .input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
@@ -172,9 +188,9 @@ select.input { appearance: auto; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .table th, .table td { text-align: left; padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
-.table th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); font-weight: 600; background: #fbf9f5; }
+.table th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); font-weight: 600; background: var(--subtle); }
 .table tbody tr:last-child td { border-bottom: none; }
-.table tbody tr:hover { background: #fbf9f5; }
+.table tbody tr:hover { background: var(--subtle); }
 .table td.wrap { white-space: normal; }
 
 .empty { border: 1px dashed var(--line-strong); border-radius: var(--radius); padding: 2rem 1rem;

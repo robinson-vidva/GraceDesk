@@ -45,6 +45,21 @@ app.use('*', async (c, next) => {
   await next();
 });
 
+// Resend delivery webhook: updates email_logs by provider id. If
+// RESEND_WEBHOOK_SECRET is set, require it as a ?token= match.
+app.post('/webhooks/resend', async (c) => {
+  const secret = c.env.RESEND_WEBHOOK_SECRET;
+  if (secret && c.req.query('token') !== secret) return c.text('forbidden', 403);
+  const evt = await c.req.json().catch(() => null);
+  const emailId = evt?.data?.email_id || evt?.data?.id;
+  if (evt?.type && emailId) {
+    const status = String(evt.type).replace('email.', ''); // delivered | opened | bounced | complained | delivery_delayed
+    await c.env.DB.prepare("UPDATE email_logs SET status = ?, updated_at = datetime('now') WHERE provider_id = ?")
+      .bind(status, emailId).run();
+  }
+  return c.json({ ok: true });
+});
+
 // ---- Platform operator console (manages all churches) ----
 app.route('/platform', platform);
 

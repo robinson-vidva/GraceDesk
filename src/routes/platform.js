@@ -82,7 +82,20 @@ platform.get('/', async (c) => {
   const q = c.req.query('q') || '';
   const churches = await listChurchesWithStats(c.env.DB, q);
   const active = churches.filter((x) => x.status === 'active').length;
+  const m = await one(c.env.DB, `SELECT
+      (SELECT COUNT(*) FROM churches) AS churches,
+      (SELECT COUNT(*) FROM churches WHERE status='active') AS active,
+      (SELECT COUNT(*) FROM members) AS members,
+      (SELECT COUNT(*) FROM contributions WHERE is_deleted=0) AS gifts,
+      (SELECT COALESCE(SUM(amount),0) FROM contributions WHERE is_deleted=0) AS total`);
   const body = html`
+    <div class="tiles mb-2">
+      ${statTile('Churches', m.churches)}
+      ${statTile('Active', m.active)}
+      ${statTile('Members', m.members)}
+      ${statTile('Gifts recorded', m.gifts)}
+      ${statTile('Total recorded', formatMoney(m.total, 'USD'))}
+    </div>
     <div class="between mb-2"><h1 class="page-title" style="margin:0">Churches</h1>
       <form method="get" action="/platform" class="toolbar" style="margin:0">
         <input class="input" type="search" name="q" value="${q}" placeholder="Search churches" />
