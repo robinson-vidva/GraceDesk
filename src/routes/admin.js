@@ -14,6 +14,7 @@ import {
   listFamilies, getFamily, familyMembers, createFamily, updateFamily, assignFamily,
 } from '../services/members.js';
 import { formatMoney } from '../services/settings.js';
+import { getOrBuildStatement } from '../services/pdf.js';
 
 export const admin = new Hono();
 admin.use('*', requireAdmin);
@@ -367,7 +368,111 @@ admin.post('/families/:id/remove', async (c) => {
   return c.redirect(`${ctx.base}/admin/families/${id}`);
 });
 
+// --- Reports ---------------------------------------------------------------
+
+admin.get('/reports', async (c) => {
+  const ctx = c.get('ctx'); const churchId = cid(c);
+  const cur = ctx.settings.currency;
+  const year = parseInt(c.req.query('year'), 10) || new Date().getFullYear();
+
+  const yr = await one(c.env.DB, `SELECT
+      COALESCE(SUM(CASE WHEN strftime('%Y',date)=? THEN amount END),0) AS this_year,
+      COALESCE(SUM(CASE WHEN strftime('%Y',date)=? THEN amount END),0) AS last_year
+    FROM contributions WHERE church_id=? AND is_deleted=0`, String(year), String(year - 1), churchId);
+  const monthly = await all(c.env.DB, `SELECT strftime('%m',date) AS mm, SUM(amount) AS total
+    FROM contributions WHERE church_id=? AND is_deleted=0 AND strftime('%Y',date)=? GROUP BY mm`, churchId, String(year));
+  const byCat = await all(c.env.DB, `SELECT COALESCE(cc.name,'Uncategorized') AS name, SUM(ct.amount) AS total
+    FROM contributions ct LEFT JOIN contribution_categories cc ON cc.id=ct.category_id
+    WHERE ct.church_id=? AND ct.is_deleted=0 AND strftime('%Y',ct.date)=? GROUP BY ct.category_id ORDER BY total DESC`, churchId, String(year));
+  const byMethod = await all(c.env.DB, `SELECT method, SUM(amount) AS total
+    FROM contributions WHERE church_id=? AND is_deleted=0 AND strftime('%Y',date)=? GROUP BY method ORDER BY total DESC`, churchId, String(year));
+  const members = await all(c.env.DB, "SELECT id, first_name, last_name FROM members WHERE church_id=? ORDER BY last_name LIMIT 2000", churchId);
+
+  const monthTotals = Array(12).fill(0);
+  for (const m of monthly) monthTotals[parseInt(m.mm, 10) - 1] = m.total;
+  const b = `${ctx.base}/admin`;
+  const years = []; for (let y = new Date().getFullYear(); y >= year - 5 && y >= 2015; y--) years.push(y);
+
+  const body = html`
+    ${toolbar(html`<form method="get" action="${b}/reports" class="toolbar" style="margin:0">
+      <label class="label" style="margin:0">Year</label>
+      <select class="input" name="year" onchange="this.form.submit()">
+        ${[...new Set([year, ...years])].sort((a, z) => z - a).map((y) => html`<option value="${y}" ${raw(y === year ? 'selected' : '')}>${y}</option>`)}
+      </select>
+      <a href="${b}/contributions/export.csv" class="btn btn-ghost btn-sm" style="margin-left:auto">Export all as CSV</a>
+    </form>`)}
+    <div class="tiles mb-2">
+      ${tile(`Given in ${year}`, formatMoney(yr.this_year, cur))}
+      ${tile(`Given in ${year - 1}`, formatMoney(yr.last_year, cur))}
+      ${tile('Change', pctChange(yr.last_year, yr.this_year))}
+    </div>
+    ${card(html`<div class="label muted small mb-2">Giving by month · ${year}</div>${barChart(monthTotals, cur)}`)}
+    <div class="grid grid-2 mt-2">
+      ${card(html`<div class="label muted small mb-2">By category</div>${breakdown(byCat.map((r) => [r.name, r.total]), cur)}`)}
+      ${card(html`<div class="label muted small mb-2">By method</div>${breakdown(byMethod.map((r) => [METHOD_LABEL(r.method), r.total]), cur)}`)}
+    </div>
+    ${card(html`<div class="label muted small mb-2">Generate a member statement</div>
+      <form method="get" action="${b}/reports/statement" class="toolbar" style="margin:0;flex-wrap:wrap">
+        <select class="input" name="member" required><option value="">Choose a member…</option>
+          ${members.map((m) => html`<option value="${m.id}">${m.last_name}, ${m.first_name}</option>`)}</select>
+        <select class="input" name="type"><option value="annual">Annual</option><option value="monthly">Monthly</option></select>
+        <input class="input" type="number" name="year" value="${year}" style="width:6rem" />
+        <input class="input" type="number" name="month" value="1" min="1" max="12" style="width:5rem" title="Month (for monthly)" />
+        <button class="btn btn-primary btn-sm">Download PDF</button>
+      </form>`)}`;
+  return c.html(adminShell(ctx, '/reports', 'Reports', body));
+});
+
+admin.get('/reports/statement', async (c) => {
+  const ctx = c.get('ctx'); const churchId = cid(c);
+  const memberId = c.req.query('member');
+  const member = memberId && await getMember(c.env.DB, churchId, memberId);
+  if (!member) return c.text('Member not found', 404);
+  const type = c.req.query('type') === 'monthly' ? 'monthly' : 'annual';
+  const year = parseInt(c.req.query('year'), 10) || new Date().getFullYear();
+  const month = parseInt(c.req.query('month'), 10) || 1;
+  member._currency = ctx.settings.currency;
+  const bytes = await getOrBuildStatement(c.env, ctx.settings, member, { type, year, month });
+  await audit(c, 'export', 'report', member.id, { type, year, month, by_admin: true });
+  const fname = type === 'annual' ? `${member.last_name}-${year}-statement.pdf` : `${member.last_name}-${year}-${String(month).padStart(2, '0')}.pdf`;
+  return new Response(bytes, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${fname}"` } });
+});
+
 // --- helpers ---------------------------------------------------------------
+
+const METHOD_LABEL = (m) => ({ cash: 'Cash', check: 'Check', zelle: 'Zelle', bank_transfer: 'Bank transfer', zeffy: 'Zeffy', stripe: 'Stripe', paypal: 'PayPal', other: 'Other' }[m] || m);
+
+function pctChange(prev, cur) {
+  if (!prev) return cur ? 'New' : '—';
+  const p = Math.round(((cur - prev) / prev) * 100);
+  return `${p >= 0 ? '+' : ''}${p}%`;
+}
+
+function barChart(values, currency) {
+  const max = Math.max(1, ...values);
+  const W = 640, H = 160, pad = 24, bw = (W - pad * 2) / 12;
+  const labels = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+  return html`<div class="table-wrap" style="border:none;background:none;overflow-x:auto">
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:640px" role="img" aria-label="Giving by month">
+      ${raw(values.map((v, i) => {
+        const h = Math.round((v / max) * (H - pad * 2));
+        const x = pad + i * bw + 3;
+        const yTop = H - pad - h;
+        return `<rect x="${x}" y="${yTop}" width="${bw - 6}" height="${h}" rx="2" fill="var(--brand)" opacity="0.9"><title>${labels[i]}: ${formatMoney(v, currency)}</title></rect>
+          <text x="${x + (bw - 6) / 2}" y="${H - 8}" font-size="9" fill="#6d675e" text-anchor="middle">${labels[i]}</text>`;
+      }).join(''))}
+    </svg></div>`;
+}
+
+function breakdown(pairs, currency) {
+  if (!pairs.length || pairs.every(([, v]) => !v)) return empty('No giving recorded.');
+  const total = pairs.reduce((s, [, v]) => s + v, 0) || 1;
+  return html`<div class="stack">${pairs.map(([name, v]) => html`
+    <div>
+      <div class="between" style="margin-bottom:2px"><span class="small">${name}</span><span class="small muted">${formatMoney(v, currency)}</span></div>
+      <div style="height:6px;background:#eee7db;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.round((v / total) * 100)}%;background:var(--brand)"></div></div>
+    </div>`)}</div>`;
+}
 
 function tile(label, value, href) {
   const inner = html`<div class="stat"><div class="label">${label}</div><div class="value">${value}</div></div>`;
