@@ -12,6 +12,8 @@ import {
   memberContributions, memberTotals, listContributions, METHOD_LABELS,
 } from '../services/contributions.js';
 import { getOrBuildStatement } from '../services/pdf.js';
+import { generateSecret, totpUri, verifyTotp } from '../services/totp.js';
+import { run } from '../db.js';
 
 export const dashboard = new Hono();
 
@@ -68,7 +70,8 @@ dashboard.get('/dashboard', requireAuth, async (c) => {
       </div>`
     : html`${card(html`<p class="muted small">Your login isn't linked to a giving record yet. An administrator can link it.</p>
         <div class="wrap-gap mt-2">${ctx.user.is_admin ? html`<a href="${b}/admin" class="btn btn-primary btn-sm">Go to admin</a>` : ''}
-        <a href="${b}/profile" class="btn btn-ghost btn-sm">My profile</a></div>`)}`}`;
+        <a href="${b}/profile" class="btn btn-ghost btn-sm">My profile</a>
+        <a href="${b}/security" class="btn btn-ghost btn-sm">Security</a></div>`)}`}`;
   return c.html(layout({ ...ctx, title: 'Dashboard' }, body));
 });
 
@@ -170,6 +173,79 @@ dashboard.get('/reports/download', requireAuth, async (c) => {
   });
 });
 
+// --- Security (2FA) --------------------------------------------------------
+
+dashboard.get('/security', requireAuth, async (c) => {
+  const ctx = c.get('ctx'); const u = ctx.user;
+  return c.html(layout({ ...ctx, title: 'Security' }, securityView(ctx, u, { flash: c.req.query() })));
+});
+
+dashboard.post('/security/setup', requireAuth, async (c) => {
+  const ctx = c.get('ctx'); const u = ctx.user;
+  if (u.totp_enabled) return c.redirect(`${ctx.base}/security`);
+  const secret = generateSecret();
+  await run(c.env.DB, 'UPDATE users SET totp_secret = ?, totp_enabled = 0 WHERE id = ?', secret, u.id);
+  return c.redirect(`${ctx.base}/security?setup=1`);
+});
+
+dashboard.post('/security/enable', requireAuth, async (c) => {
+  const ctx = c.get('ctx'); const u = ctx.user;
+  const form = await c.req.parseBody();
+  if (!u.totp_secret) return c.redirect(`${ctx.base}/security`);
+  const ok = await verifyTotp(u.totp_secret, form.code);
+  if (!ok) return c.redirect(`${ctx.base}/security?setup=1&bad=1`);
+  await run(c.env.DB, 'UPDATE users SET totp_enabled = 1 WHERE id = ?', u.id);
+  await audit(c, 'update', 'user', u.id, { totp: 'enabled' });
+  return c.redirect(`${ctx.base}/security?enabled=1`);
+});
+
+dashboard.post('/security/disable', requireAuth, async (c) => {
+  const ctx = c.get('ctx'); const u = ctx.user;
+  const form = await c.req.parseBody();
+  if (u.totp_enabled) {
+    const ok = await verifyTotp(u.totp_secret, form.code);
+    if (!ok) return c.redirect(`${ctx.base}/security?bad=1`);
+  }
+  await run(c.env.DB, 'UPDATE users SET totp_secret = NULL, totp_enabled = 0 WHERE id = ?', u.id);
+  await audit(c, 'update', 'user', u.id, { totp: 'disabled' });
+  return c.redirect(`${ctx.base}/security?disabled=1`);
+});
+
+function securityView(ctx, u, { flash = {} } = {}) {
+  const b = ctx.base;
+  let inner;
+  if (u.totp_enabled) {
+    inner = html`
+      ${flash.enabled ? alertBox('success', 'Two-factor authentication is on.') : ''}
+      <p><span class="badge badge-ok">enabled</span> Your account asks for a code at sign-in.</p>
+      <form method="post" action="${b}/security/disable" class="mt-2">
+        ${flash.bad ? alertBox('error', 'Incorrect code.') : ''}
+        ${field({ label: 'Enter a current code to turn it off', name: 'code', required: true, placeholder: '123456', autocomplete: 'one-time-code' })}
+        <button class="btn btn-ghost btn-sm link-danger">Turn off two-factor</button>
+      </form>`;
+  } else if (u.totp_secret) {
+    // Setup in progress: show the key + confirm.
+    const uri = totpUri(u.totp_secret, ctx.user.email, ctx.settings.church_name || 'GraceDesk');
+    inner = html`
+      ${flash.disabled ? alertBox('success', 'Two-factor authentication is off.') : ''}
+      <p class="muted small">In your authenticator app (Google Authenticator, Authy, 1Password…), add an account and enter this key:</p>
+      <div class="card" style="text-align:center;font-family:monospace;letter-spacing:2px;word-break:break-all">${u.totp_secret}</div>
+      <p class="small mt-1"><a href="${uri}">Open in an app</a> if you're on your phone.</p>
+      <form method="post" action="${b}/security/enable" class="mt-2">
+        ${flash.bad ? alertBox('error', 'That code was not correct. Try again.') : ''}
+        ${field({ label: 'Enter the 6-digit code to confirm', name: 'code', required: true, placeholder: '123456', autocomplete: 'one-time-code' })}
+        <button class="btn btn-primary btn-sm">Turn on two-factor</button>
+      </form>`;
+  } else {
+    inner = html`
+      ${flash.disabled ? alertBox('success', 'Two-factor authentication is off.') : ''}
+      <p class="muted small">Add a second step at sign-in using an authenticator app. Recommended for admins.</p>
+      <form method="post" action="${b}/security/setup" class="mt-1"><button class="btn btn-primary btn-sm">Set up two-factor</button></form>`;
+  }
+  return html`<div class="narrow">${card(html`<h1 style="font-size:1.4rem">Two-factor authentication</h1>${inner}
+    <p class="small mt-2"><a href="${b}/profile">← Back to profile</a></p>`)}</div>`;
+}
+
 // --- Profile ---------------------------------------------------------------
 
 dashboard.get('/profile', requireAuth, async (c) => {
@@ -206,7 +282,8 @@ function profileView(ctx, member, saved) {
   const b = ctx.base;
   if (!member) {
     return card(html`<h1 style="font-size:1.4rem">My profile</h1>
-      <p class="muted small">No member record is linked to your account. <a href="${b}/change-password">Change password</a></p>`);
+      <p class="muted small">No member record is linked to your account.</p>
+      <p class="small"><a href="${b}/change-password">Change password</a> &nbsp;·&nbsp; <a href="${b}/security">Two-factor authentication</a></p>`);
   }
   const v = { ...member, phones: parsePhones(member.phones).join(', ') };
   const monthSel = (name, val) => html`<select class="input" name="${name}"><option value="">Month</option>
@@ -239,7 +316,7 @@ function profileView(ctx, member, saved) {
         </div>
         ${submitBtn('Save profile')}
       </form>
-      <p class="small mt-2"><a href="${b}/change-password">Change password</a></p>`)}`;
+      <p class="small mt-2"><a href="${b}/change-password">Change password</a> &nbsp;·&nbsp; <a href="${b}/security">Two-factor authentication</a></p>`)}`;
 }
 
 // Disable the email field so it is read-only (email edits are admin-only).

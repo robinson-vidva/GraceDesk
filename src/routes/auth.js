@@ -1,14 +1,15 @@
 import { Hono } from 'hono';
 import { one, run, insert } from '../db.js';
 import {
-  hashPassword, verifyPassword, createSession, destroySession, randomHex, sha256Hex,
+  hashPassword, verifyPassword, createSession, destroySession, randomHex, sha256Hex, updateSessionData,
 } from '../auth.js';
+import { verifyTotp } from '../services/totp.js';
 import { verifyTurnstile } from '../services/turnstile.js';
 import { sendEmail, emailShell, emailEnabled } from '../services/email.js';
 import { audit } from '../services/audit.js';
 import { requireAuth } from '../middleware.js';
 import {
-  loginPage, registerPage, registeredPage, forgotPage, resetPage, changePasswordPage,
+  loginPage, registerPage, registeredPage, forgotPage, resetPage, changePasswordPage, twoFactorPage,
 } from '../views/auth.js';
 
 export const auth = new Hono();
@@ -77,6 +78,7 @@ auth.post('/register', async (c) => {
 
 auth.get('/login', (c) => {
   const ctx = c.get('ctx');
+  if (ctx.pendingUserId) return c.redirect(`${ctx.base}/login/2fa`);
   if (ctx.user) return c.redirect(`${ctx.base}/dashboard`);
   return c.html(loginPage(ctx, c.env));
 });
@@ -130,9 +132,39 @@ auth.post('/login', async (c) => {
     'UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_login = ? WHERE id = ?',
     new Date().toISOString(), user.id,
   );
+  // Two-factor step, if enabled.
+  if (user.totp_enabled) {
+    await createSession(c, user.id, churchId, { pending2fa: true });
+    await audit(c, 'login', 'user', user.id, { step: '2fa_required' });
+    return c.redirect(`${ctx.base}/login/2fa`);
+  }
+
   await createSession(c, user.id, churchId);
   c.set('ctx', { ...ctx, user });
   await audit(c, 'login', 'user', user.id);
+  if (user.must_change_password) return c.redirect(`${ctx.base}/change-password`);
+  return c.redirect(`${ctx.base}/dashboard`);
+});
+
+// Second factor prompt.
+auth.get('/login/2fa', (c) => {
+  const ctx = c.get('ctx');
+  if (!ctx.pendingUserId) return c.redirect(`${ctx.base}/login`);
+  return c.html(twoFactorPage(ctx));
+});
+
+auth.post('/login/2fa', async (c) => {
+  const ctx = c.get('ctx');
+  if (!ctx.pendingUserId) return c.redirect(`${ctx.base}/login`);
+  const form = await c.req.parseBody();
+  const user = await one(c.env.DB, 'SELECT * FROM users WHERE id = ? AND church_id = ?', ctx.pendingUserId, ctx.church.id);
+  if (!user || !user.totp_secret) { await destroySession(c); return c.redirect(`${ctx.base}/login`); }
+  const ok = await verifyTotp(user.totp_secret, form.code);
+  if (!ok) return c.html(twoFactorPage(ctx, 'That code was not correct. Try again.'));
+
+  const session = c.get('session');
+  await updateSessionData(c, session.id, {}); // clear pending flag
+  await audit(c, 'login', 'user', user.id, { step: '2fa_ok' });
   if (user.must_change_password) return c.redirect(`${ctx.base}/change-password`);
   return c.redirect(`${ctx.base}/dashboard`);
 });

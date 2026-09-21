@@ -15,17 +15,23 @@ export async function loadChurchContext(c, next) {
   const settings = await getSettings(c.env.DB, church.id);
 
   let user = null;
+  let pendingUserId = null;
   const session = await getSession(c);
   if (session && session.churchId === church.id) {
-    user = await one(
-      c.env.DB,
-      'SELECT * FROM users WHERE id = ? AND church_id = ? AND is_active = 1',
-      session.userId, church.id,
-    );
-    if (user) c.set('session', session);
+    c.set('session', session);
+    if (session.data?.pending2fa) {
+      // Password verified but awaiting a 2FA code — not yet fully authenticated.
+      pendingUserId = session.userId;
+    } else {
+      user = await one(
+        c.env.DB,
+        'SELECT * FROM users WHERE id = ? AND church_id = ? AND is_active = 1',
+        session.userId, church.id,
+      );
+    }
   }
 
-  c.set('ctx', { church, settings, user, base });
+  c.set('ctx', { church, settings, user, base, pendingUserId });
 
   if (church.status === 'suspended' && !c.req.path.endsWith('/suspended')) {
     return c.redirect(`${base}/suspended`);

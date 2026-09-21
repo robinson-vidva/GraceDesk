@@ -90,6 +90,18 @@ export function resetPage(ctx, { token, error, invalid } = {}) {
   return layout({ ...ctx, title: 'Reset password' }, authCard('Set a new password', inner));
 }
 
+export function twoFactorPage(ctx, error) {
+  const inner = html`
+    <form method="post" action="${ctx.base}/login/2fa">
+      ${error ? alertBox('error', error) : ''}
+      <p class="muted small">Enter the 6-digit code from your authenticator app.</p>
+      ${field({ label: 'Authentication code', name: 'code', value: '', required: true, autocomplete: 'one-time-code', placeholder: '123456' })}
+      ${submitBtn('Verify')}
+    </form>
+    <p class="small center mt-2"><a href="${ctx.base}/logout">Cancel</a></p>`;
+  return layout({ ...ctx, title: 'Two-factor' }, authCard('Two-factor verification', inner));
+}
+
 export function changePasswordPage(ctx, { error, forced } = {}) {
   const b = ctx.base;
   const inner = html`
