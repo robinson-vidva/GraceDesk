@@ -9,6 +9,7 @@ import { dashboard } from './routes/dashboard.js';
 import { admin } from './routes/admin.js';
 import { adminContributions } from './routes/admin-contributions.js';
 import { adminSettings } from './routes/admin-settings.js';
+import { adminMissions } from './routes/admin-missions.js';
 import { runDailyJobs } from './services/scheduled.js';
 import { platform } from './routes/platform.js';
 import { findByCustomDomain } from './services/platform.js';
@@ -63,6 +64,7 @@ church.get('/logo', async (c) => {
 
 church.route('/admin/contributions', adminContributions);
 church.route('/admin/settings', adminSettings);
+church.route('/admin/missions', adminMissions);
 church.route('/admin', admin);
 church.route('/', auth);
 church.route('/', dashboard);

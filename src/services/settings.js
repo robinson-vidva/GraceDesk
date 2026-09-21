@@ -51,7 +51,7 @@ const SETTABLE = new Set([
   'church_website', 'ein_tax_id', 'currency', 'timezone', 'date_format',
   'resend_api_key', 'default_from_email', 'reply_to_email',
   'thankyou_subject_template', 'thankyou_intro_text', 'email_image_url',
-  'turnstile_site_key', 'turnstile_secret_key', 'church_logo_key',
+  'turnstile_site_key', 'turnstile_secret_key', 'church_logo_key', 'missions_enabled',
 ]);
 
 export async function updateSettings(db, churchId, fields) {

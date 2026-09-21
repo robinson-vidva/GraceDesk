@@ -60,6 +60,13 @@ adminSettings.get('/', async (c) => {
         ${submitBtn('Save settings')}
       </form>`)}
     ${card(html`
+      <div class="label muted small mb-2">Optional modules</div>
+      <form method="post" action="${ctx.base}/admin/settings/modules" class="between" style="gap:0.6rem">
+        <label class="flex small" style="margin:0"><input type="checkbox" name="missions_enabled" ${raw(s.missions_enabled ? 'checked' : '')} />
+          Missions tracker — track supported mission churches and schools, their headcounts, and support sent</label>
+        <button class="btn btn-ghost btn-sm">Save</button>
+      </form>`)}
+    ${card(html`
       <div class="label muted small mb-2">Church logo</div>
       ${s.church_logo_key ? html`<img src="${ctx.base}/logo" alt="logo" style="height:56px;border-radius:8px;margin-bottom:0.6rem" /><br/>` : html`<p class="muted small">No logo uploaded.</p>`}
       <form method="post" action="${ctx.base}/admin/settings/logo" enctype="multipart/form-data" class="wrap-gap">
@@ -80,6 +87,14 @@ adminSettings.post('/', async (c) => {
     'currency', 'timezone',
   ]));
   await audit(c, 'settings_change', 'settings', churchId, { section: 'general' });
+  return c.redirect(`${ctx.base}/admin/settings?saved=1`);
+});
+
+adminSettings.post('/modules', async (c) => {
+  const ctx = c.get('ctx'); const churchId = cid(c);
+  const form = await c.req.parseBody();
+  await updateSettings(c.env.DB, churchId, { missions_enabled: form.missions_enabled ? 1 : 0 });
+  await audit(c, 'settings_change', 'settings', churchId, { module: 'missions', on: !!form.missions_enabled });
   return c.redirect(`${ctx.base}/admin/settings?saved=1`);
 });
 

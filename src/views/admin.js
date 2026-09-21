@@ -17,6 +17,7 @@ export function adminShell(ctx, active, title, body) {
     <nav class="admin-nav">
       ${SECTIONS.map(([path, label]) => html`
         <a href="${b}${path}" class="${active === path ? 'active' : ''}">${label}</a>`)}
+      ${ctx.settings?.missions_enabled ? html`<a href="${b}/missions" class="${active === '/missions' ? 'active' : ''}">Missions</a>` : ''}
       ${ctx.user?.can_manage_admins ? html`<a href="${b}/users" class="${active === '/users' ? 'active' : ''}">Users</a>` : ''}
       <a href="${b}/audit" class="${active === '/audit' ? 'active' : ''}">Audit</a>
     </nav>`;
