@@ -53,13 +53,13 @@ function timingSafeEqual(a, b) {
 
 // --- Sessions (stored in D1, id in an HttpOnly cookie) --------------------
 
-export async function createSession(c, userId, data = {}) {
+export async function createSession(c, userId, churchId, data = {}) {
   const id = randomHex(32);
   const expires = new Date(Date.now() + SESSION_TTL_DAYS * 86400_000);
   await run(
     c.env.DB,
-    'INSERT INTO sessions (id, user_id, data, expires_at) VALUES (?, ?, ?, ?)',
-    id, userId, JSON.stringify(data), expires.toISOString(),
+    'INSERT INTO sessions (id, user_id, church_id, data, expires_at) VALUES (?, ?, ?, ?, ?)',
+    id, userId, churchId, JSON.stringify(data), expires.toISOString(),
   );
   setCookie(c, SESSION_COOKIE, id, {
     httpOnly: true,
@@ -80,7 +80,7 @@ export async function getSession(c) {
     await run(c.env.DB, 'DELETE FROM sessions WHERE id = ?', id);
     return null;
   }
-  return { id: row.id, userId: row.user_id, data: JSON.parse(row.data || '{}') };
+  return { id: row.id, userId: row.user_id, churchId: row.church_id, data: JSON.parse(row.data || '{}') };
 }
 
 export async function destroySession(c) {

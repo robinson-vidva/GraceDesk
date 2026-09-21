@@ -41,22 +41,26 @@ export function layout(ctx, body) {
 function header(ctx) {
   const s = ctx.settings || {};
   const user = ctx.user;
+  const base = ctx.base || '';
+  const home = base || '/';
   return html`
   <header class="text-white btn-brand shadow">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-      <a href="/" class="flex items-center gap-2 font-semibold text-lg">
+      <a href="${home}" class="flex items-center gap-2 font-semibold text-lg">
         ${s.church_logo_key
-          ? html`<img src="/logo" alt="" class="h-8 w-8 rounded object-cover bg-white/20" />`
+          ? html`<img src="${base}/logo" alt="" class="h-8 w-8 rounded object-cover bg-white/20" />`
           : html`<span class="h-8 w-8 rounded bg-white/20 grid place-items-center">⛪</span>`}
         <span>${s.church_name || 'GraceDesk'}</span>
       </a>
       <nav class="text-sm flex items-center gap-4">
-        ${user
+        ${base && user
           ? html`
-            <a href="/dashboard" class="hover:underline">Dashboard</a>
-            ${user.is_admin ? html`<a href="/admin" class="hover:underline">Admin</a>` : ''}
-            <a href="/logout" class="hover:underline">Log out</a>`
-          : html`<a href="/login" class="hover:underline">Login</a>`}
+            <a href="${base}/dashboard" class="hover:underline">Dashboard</a>
+            ${user.is_admin ? html`<a href="${base}/admin" class="hover:underline">Admin</a>` : ''}
+            <a href="${base}/logout" class="hover:underline">Log out</a>`
+          : base
+            ? html`<a href="${base}/login" class="hover:underline">Login</a>`
+            : ''}
       </nav>
     </div>
   </header>`;
@@ -73,13 +77,14 @@ function flashBanner(flash) {
 
 function footer(ctx, year) {
   const s = ctx.settings || {};
+  const base = ctx.base || '';
   return html`
   <footer class="border-t bg-white">
     <div class="max-w-5xl mx-auto px-4 py-6 text-sm text-slate-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <div class="space-x-3">
         ${s.church_email ? html`<a class="hover:underline" href="mailto:${s.church_email}">${s.church_email}</a>` : ''}
         ${s.church_phone ? html`<span>${s.church_phone}</span>` : ''}
-        <a class="hover:underline" href="/terms">Terms</a>
+        <a class="hover:underline" href="${base}/terms">Terms</a>
       </div>
       <div class="text-slate-400">© ${year} ${s.church_name || ''} · Powered by GraceDesk</div>
     </div>

@@ -2,12 +2,14 @@ import { Hono } from 'hono';
 import { html } from 'hono/html';
 import { layout, card } from '../views/layout.js';
 
+// Church-scoped public pages (mounted under /c/:slug).
 export const pages = new Hono();
 
 pages.get('/', (c) => {
   const ctx = c.get('ctx');
   const s = ctx.settings || {};
-  if (ctx.user) return c.redirect('/dashboard');
+  const b = ctx.base;
+  if (ctx.user) return c.redirect(`${b}/dashboard`);
 
   const body = html`
     <div class="max-w-2xl mx-auto text-center py-8">
@@ -22,11 +24,11 @@ pages.get('/', (c) => {
       </div>
 
       <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="/login" class="btn-brand text-white font-medium rounded-lg px-6 py-3">Login</a>
-        <a href="/register" class="bg-white border border-slate-300 font-medium rounded-lg px-6 py-3 hover:bg-slate-50">New here? Register</a>
+        <a href="${b}/login" class="btn-brand text-white font-medium rounded-lg px-6 py-3">Login</a>
+        <a href="${b}/register" class="bg-white border border-slate-300 font-medium rounded-lg px-6 py-3 hover:bg-slate-50">New here? Register</a>
       </div>
       <p class="mt-4 text-sm text-slate-500">
-        <a href="/forgot-password" class="hover:underline">Forgot your password?</a>
+        <a href="${b}/forgot-password" class="hover:underline">Forgot your password?</a>
       </p>
     </div>`;
 
@@ -47,8 +49,13 @@ pages.get('/terms', (c) => {
   return c.html(layout({ ...ctx, title: 'Terms' }, body));
 });
 
-// Health check (no layout).
-pages.get('/healthz', (c) => c.json({ ok: true, app: 'gracedesk' }));
+pages.get('/suspended', (c) => {
+  const ctx = c.get('ctx');
+  const body = card(html`
+    <h1 class="text-xl font-bold mb-2">This church account is paused</h1>
+    <p class="text-sm text-slate-600">Please contact your church administrator. If you're the administrator, contact GraceDesk support.</p>`);
+  return c.html(layout({ ...ctx, title: 'Paused', user: null }, body));
+});
 
 function feature(icon, title, text) {
   return html`

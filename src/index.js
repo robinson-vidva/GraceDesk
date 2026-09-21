@@ -1,36 +1,49 @@
 import { Hono } from 'hono';
+import { trimTrailingSlash } from 'hono/trailing-slash';
 import { ensureSeeded } from './data/seed.js';
-import { loadContext } from './middleware.js';
+import { loadChurchContext } from './middleware.js';
+import { marketing } from './routes/marketing.js';
 import { pages } from './routes/pages.js';
 import { auth } from './routes/auth.js';
 import { dashboard } from './routes/dashboard.js';
 
 const app = new Hono();
 
-// First-run seed (idempotent; cheap after the first call).
+// Normalize `/path/` -> `/path` (GET only) so trailing slashes don't 404.
+app.use(trimTrailingSlash());
+
+// First-run seed (idempotent; creates the demo church on a fresh DB).
 app.use('*', async (c, next) => {
   await ensureSeeded(c.env);
   await next();
 });
 
-// Load church settings + current user for every request.
-app.use('*', loadContext);
+// ---- Church sub-app: everything under /c/:slug is tenant-scoped ----
+const church = new Hono();
+church.use('*', loadChurchContext);
 
-// Serve the church logo from R2.
-app.get('/logo', async (c) => {
+// Serve this church's logo from R2.
+church.get('/logo', async (c) => {
   const key = c.get('ctx').settings?.church_logo_key;
   if (!key) return c.notFound();
   const obj = await c.env.FILES.get(key);
   if (!obj) return c.notFound();
   return new Response(obj.body, {
-    headers: { 'Content-Type': obj.httpMetadata?.contentType || 'image/png', 'Cache-Control': 'public, max-age=300' },
+    headers: {
+      'Content-Type': obj.httpMetadata?.contentType || 'image/png',
+      'Cache-Control': 'public, max-age=300',
+    },
   });
 });
 
-// Routes.
-app.route('/', auth);
-app.route('/', dashboard);
-app.route('/', pages);
+church.route('/', auth);
+church.route('/', dashboard);
+church.route('/', pages);
+
+app.route('/c/:slug', church);
+
+// ---- Global (tenant-less) marketing + signup ----
+app.route('/', marketing);
 
 app.notFound((c) => c.text('Not found', 404));
 app.onError((err, c) => {
