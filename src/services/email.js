@@ -64,7 +64,7 @@ export async function sendEmail(env, settings, { to, subject, html, replyTo, typ
 // Shared branded wrapper for all outgoing emails.
 export function emailShell(settings, innerHtml) {
   const name = settings?.church_name || 'Our Church';
-  const color = settings?.primary_color || '#4f46e5';
+  const color = settings?.primary_color || '#1f5a6b';
   const img = settings?.email_image_url
     ? `<img src="${settings.email_image_url}" alt="${name}" style="max-height:64px;margin-bottom:12px" />`
     : '';

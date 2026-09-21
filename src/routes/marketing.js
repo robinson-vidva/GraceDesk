@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { html, raw } from 'hono/html';
+import { html } from 'hono/html';
 import { layout, card } from '../views/layout.js';
 import { field, submitBtn, authCard, alertBox } from '../views/forms.js';
 import { all, one } from '../db.js';
@@ -15,26 +15,25 @@ const validEmail = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e || '');
 
 marketing.get('/', (c) => {
   const body = html`
-    <div class="text-center py-10">
-      <h1 class="text-4xl font-bold text-slate-900">Church giving records,<br/>without the monthly bill.</h1>
-      <p class="mt-4 text-lg text-slate-600 max-w-xl mx-auto">
-        GraceDesk is a free member portal and contribution tracker for churches.
-        Record giving, send thank-you notes, and hand members their tax statements — all in one place.
-      </p>
-      <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-        <a href="/signup" class="btn-brand text-white font-medium rounded-lg px-6 py-3">Start your church — free</a>
-        <a href="/find" class="bg-white border border-slate-300 font-medium rounded-lg px-6 py-3 hover:bg-slate-50">Find your church</a>
+    <section class="hero">
+      <h1>Church giving records,<br/>without the monthly bill.</h1>
+      <p>A free member portal and giving tracker for churches. Record contributions,
+         send thank-you notes, and give members their year-end tax statements, all in one place.</p>
+      <div class="actions">
+        <a href="/signup" class="btn btn-primary">Start your church</a>
+        <a href="/find" class="btn btn-ghost">Find your church</a>
       </div>
-    </div>
-    <div class="grid gap-4 sm:grid-cols-3 max-w-4xl mx-auto mt-4">
-      ${feat('🧾', 'Tax-ready statements', 'Members download monthly & annual PDF giving statements themselves.')}
-      ${feat('✉️', 'Automatic thank-yous', 'Every recorded gift triggers a branded thank-you email with a Bible verse.')}
-      ${feat('👪', 'Families & directory', 'Group households, approve members, and keep your directory current.')}
-      ${feat('🔒', 'Private by design', 'Each church only ever sees its own data. No money ever changes hands here.')}
-      ${feat('🎨', 'Your branding', 'Your church name, logo, and colors — members see you, not us.')}
-      ${feat('⚡', 'Runs on Cloudflare', 'Fast everywhere, and free to run at church scale.')}
+    </section>
+
+    <div class="grid grid-3 mt-2">
+      ${feat('Tax-ready statements', 'Members download their own monthly and annual giving statements as PDF, ready for filing.')}
+      ${feat('Automatic thank-yous', 'Every recorded gift sends a branded thank-you note with a scripture verse.')}
+      ${feat('Families and directory', 'Group households, approve new members, and keep your directory current.')}
+      ${feat('Private by design', 'Each church sees only its own data, and no money ever passes through the system.')}
+      ${feat('Your branding', 'Your church name, logo, and colors. Members see you, not us.')}
+      ${feat('Made for phones', 'Built to work well on a phone, so members can check their giving anywhere.')}
     </div>`;
-  return c.html(layout({ ...G, title: 'Free church contribution tracking' }, body));
+  return c.html(layout({ ...G, title: 'Free church giving records' }, body));
 });
 
 // --- Find your church ------------------------------------------------------
@@ -46,7 +45,6 @@ marketing.post('/find', async (c) => {
   const q = (form.q || '').trim();
   if (!q) return c.html(findPage({ error: 'Please enter your church name.' }));
 
-  // Exact slug match wins; otherwise fuzzy name search.
   const bySlug = await one(c.env.DB, "SELECT slug, name FROM churches WHERE slug = ? AND status != 'suspended'", q.toLowerCase());
   if (bySlug) return c.redirect(`/c/${bySlug.slug}/login`);
 
@@ -105,12 +103,11 @@ function findPage({ q = '', matches, error } = {}) {
     </form>
     ${matches
       ? (matches.length
-        ? html`<div class="mt-4 divide-y border rounded-lg">
-            ${matches.map((m) => html`<a href="/c/${m.slug}/login" class="block px-4 py-3 hover:bg-slate-50 flex justify-between items-center">
-              <span class="font-medium">${m.name}</span>
-              <span class="text-brand text-sm">Go →</span></a>`)}
+        ? html`<div class="card mt-2" style="padding:0">
+            ${matches.map((m, i) => html`<a href="/c/${m.slug}/login" style="display:flex;justify-content:space-between;padding:0.8rem 1rem;${i ? 'border-top:1px solid var(--line)' : ''}">
+              <span>${m.name}</span><span class="small">Open</span></a>`)}
           </div>`
-        : html`<p class="mt-4 text-sm text-slate-500">No churches found. Ask your admin for the link, or <a href="/signup" class="text-brand hover:underline">start a new church</a>.</p>`)
+        : html`<p class="muted small mt-2">No churches found. Ask your administrator for the link, or <a href="/signup">start a new church</a>.</p>`)
       : ''}`;
   return layout({ ...G, title: 'Find your church' }, authCard('Find your church', inner,
     'Enter your church name to reach its portal.'));
@@ -121,9 +118,9 @@ function signupPage({ error, values = {} } = {}) {
     <form method="post" action="/signup">
       ${error ? alertBox('error', error) : ''}
       ${field({ label: 'Church name', name: 'church_name', value: values.church_name || '', required: true, placeholder: 'First Baptist Church' })}
-      <hr class="my-4 border-slate-200" />
-      <p class="text-sm text-slate-500 mb-2">Your administrator account</p>
-      <div class="grid grid-cols-2 gap-3">
+      <hr class="divider" />
+      <p class="muted small">Your administrator account</p>
+      <div class="row">
         <div>${field({ label: 'First name', name: 'first_name', value: values.first_name || '', required: true })}</div>
         <div>${field({ label: 'Last name', name: 'last_name', value: values.last_name || '', required: true })}</div>
       </div>
@@ -132,16 +129,11 @@ function signupPage({ error, values = {} } = {}) {
       ${field({ label: 'Confirm password', name: 'password2', type: 'password', required: true, autocomplete: 'new-password' })}
       ${submitBtn('Create church')}
     </form>
-    <div class="mt-4 text-sm text-center text-slate-500">
-      Already have a church? <a href="/find" class="text-brand hover:underline">Find it</a>
-    </div>`;
-  return layout({ ...G, title: 'Start your church' }, authCard('Start your church on GraceDesk', inner,
-    'Free. Takes a minute. You become the first admin.'));
+    <p class="muted small center mt-1">Already have a church? <a href="/find">Find it</a></p>`;
+  return layout({ ...G, title: 'Start your church' }, authCard('Start your church', inner,
+    'Free to use. You become the first administrator.'));
 }
 
-function feat(icon, title, text) {
-  return card(html`
-    <div class="text-2xl">${icon}</div>
-    <div class="font-semibold text-slate-900 mt-2">${title}</div>
-    <div class="text-sm text-slate-500 mt-1">${text}</div>`);
+function feat(title, text) {
+  return card(html`<div class="feature"><h3>${title}</h3><p>${text}</p></div>`);
 }

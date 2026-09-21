@@ -1,11 +1,10 @@
 import { html, raw } from 'hono/html';
 
-// Base HTML shell. `ctx` carries { settings, user, title, flash }.
+// Base HTML shell. `ctx` carries { settings, user, title, base, flash }.
 export function layout(ctx, body) {
   const s = ctx.settings || {};
-  const primary = s.primary_color || '#4f46e5';
+  const brand = s.primary_color || '#1f5a6b';
   const churchName = s.church_name || 'GraceDesk';
-  const year = new Date().getFullYear();
 
   return html`<!doctype html>
 <html lang="en">
@@ -15,25 +14,17 @@ export function layout(ctx, body) {
   <title>${ctx.title ? `${ctx.title} · ${churchName}` : churchName}</title>
   <link rel="icon" href="/icons/icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { theme: { extend: { colors: { brand: '${raw(primary)}' } } } };
-  </script>
-  <style>
-    :root { --brand: ${raw(primary)}; }
-    .btn-brand { background: var(--brand); }
-    .btn-brand:hover { filter: brightness(0.92); }
-    .text-brand { color: var(--brand); }
-    .ring-brand:focus { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--brand); }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <style>:root { --brand: ${raw(brand)}; --brand-ink: color-mix(in srgb, ${raw(brand)} 78%, #000); }</style>
 </head>
-<body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
+<body>
   ${header(ctx)}
   ${ctx.flash ? flashBanner(ctx.flash) : ''}
-  <main class="flex-1 w-full max-w-5xl mx-auto px-4 py-6">
-    ${body}
-  </main>
-  ${footer(ctx, year)}
+  <main class="main"><div class="container">${body}</div></main>
+  ${footer(ctx)}
 </body>
 </html>`;
 }
@@ -44,54 +35,55 @@ function header(ctx) {
   const base = ctx.base || '';
   const home = base || '/';
   return html`
-  <header class="text-white btn-brand shadow">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-      <a href="${home}" class="flex items-center gap-2 font-semibold text-lg">
+  <header class="site-header">
+    <div class="container">
+      <a href="${home}" class="brandmark">
         ${s.church_logo_key
-          ? html`<img src="${base}/logo" alt="" class="h-8 w-8 rounded object-cover bg-white/20" />`
-          : html`<span class="h-8 w-8 rounded bg-white/20 grid place-items-center">⛪</span>`}
+          ? html`<img src="${base}/logo" alt="" />`
+          : html`<span class="mark">${initial(s.church_name)}</span>`}
         <span>${s.church_name || 'GraceDesk'}</span>
       </a>
-      <nav class="text-sm flex items-center gap-4">
+      <nav class="nav">
         ${base && user
           ? html`
-            <a href="${base}/dashboard" class="hover:underline">Dashboard</a>
-            ${user.is_admin ? html`<a href="${base}/admin" class="hover:underline">Admin</a>` : ''}
-            <a href="${base}/logout" class="hover:underline">Log out</a>`
+            <a href="${base}/dashboard">Dashboard</a>
+            ${user.is_admin ? html`<a href="${base}/admin">Admin</a>` : ''}
+            <a href="${base}/logout">Sign out</a>`
           : base
-            ? html`<a href="${base}/login" class="hover:underline">Login</a>`
-            : ''}
+            ? html`<a href="${base}/login">Sign in</a>`
+            : html`<a href="/find">Find your church</a><a href="/signup">Start a church</a>`}
       </nav>
     </div>
   </header>`;
 }
 
 function flashBanner(flash) {
-  const color = flash.type === 'error' ? 'bg-red-50 text-red-800 border-red-200'
-    : flash.type === 'success' ? 'bg-green-50 text-green-800 border-green-200'
-    : 'bg-blue-50 text-blue-800 border-blue-200';
-  return html`<div class="${color} border-b">
-    <div class="max-w-5xl mx-auto px-4 py-2 text-sm">${flash.message}</div>
-  </div>`;
+  const cls = flash.type === 'error' ? 'alert-error' : flash.type === 'success' ? 'alert-ok' : 'alert-info';
+  return html`<div class="container" style="padding-top:1rem"><div class="alert ${cls}">${flash.message}</div></div>`;
 }
 
-function footer(ctx, year) {
+function footer(ctx) {
   const s = ctx.settings || {};
   const base = ctx.base || '';
+  const year = new Date().getFullYear();
   return html`
-  <footer class="border-t bg-white">
-    <div class="max-w-5xl mx-auto px-4 py-6 text-sm text-slate-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-      <div class="space-x-3">
-        ${s.church_email ? html`<a class="hover:underline" href="mailto:${s.church_email}">${s.church_email}</a>` : ''}
-        ${s.church_phone ? html`<span>${s.church_phone}</span>` : ''}
-        <a class="hover:underline" href="${base}/terms">Terms</a>
+  <footer class="site-footer">
+    <div class="container">
+      <div>
+        ${s.church_email ? html`<a href="mailto:${s.church_email}">${s.church_email}</a>&nbsp;&nbsp;` : ''}
+        ${s.church_phone ? html`<span class="muted">${s.church_phone}</span>&nbsp;&nbsp;` : ''}
+        <a href="${base}/terms">Terms</a>
       </div>
-      <div class="text-slate-400">© ${year} ${s.church_name || ''} · Powered by GraceDesk</div>
+      <div class="muted">© ${year} ${s.church_name || 'GraceDesk'} · Powered by GraceDesk</div>
     </div>
   </footer>`;
 }
 
-// Small reusable card wrapper.
-export function card(inner, cls = '') {
-  return html`<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 ${cls}">${inner}</div>`;
+function initial(name) {
+  return (name || 'G').trim().charAt(0).toUpperCase();
+}
+
+// Reusable card wrapper.
+export function card(inner, extra = '') {
+  return html`<div class="card ${extra}">${inner}</div>`;
 }

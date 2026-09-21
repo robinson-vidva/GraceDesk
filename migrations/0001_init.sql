@@ -22,7 +22,7 @@ CREATE TABLE church_settings (
   id                          INTEGER PRIMARY KEY AUTOINCREMENT,
   church_id                   INTEGER NOT NULL UNIQUE REFERENCES churches(id) ON DELETE CASCADE,
   church_logo_key             TEXT,
-  primary_color               TEXT    NOT NULL DEFAULT '#4f46e5',
+  primary_color               TEXT    NOT NULL DEFAULT '#1f5a6b',
   church_address_line1        TEXT,
   church_address_line2        TEXT,
   church_city                 TEXT,

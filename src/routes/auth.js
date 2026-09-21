@@ -169,7 +169,7 @@ auth.post('/forgot-password', async (c) => {
     const html = emailShell(ctx.settings, `
       <p>Hi ${user.first_name || 'there'},</p>
       <p>We received a request to reset your password. Click below to choose a new one. This link expires in 24 hours.</p>
-      <p style="margin:20px 0"><a href="${link}" style="background:${ctx.settings?.primary_color || '#4f46e5'};color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Reset password</a></p>
+      <p style="margin:20px 0"><a href="${link}" style="background:${ctx.settings?.primary_color || '#1f5a6b'};color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Reset password</a></p>
       <p style="font-size:12px;color:#64748b">If you didn't request this, you can safely ignore this email.</p>`);
     await sendEmail(c.env, ctx.settings, {
       to: email, subject: `Reset your password — ${ctx.settings?.church_name || 'GraceDesk'}`,
