@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { ensureSeeded } from './data/seed.js';
 import { loadContext } from './middleware.js';
 import { pages } from './routes/pages.js';
+import { auth } from './routes/auth.js';
+import { dashboard } from './routes/dashboard.js';
 
 const app = new Hono();
 
@@ -26,6 +28,8 @@ app.get('/logo', async (c) => {
 });
 
 // Routes.
+app.route('/', auth);
+app.route('/', dashboard);
 app.route('/', pages);
 
 app.notFound((c) => c.text('Not found', 404));

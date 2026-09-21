@@ -93,4 +93,10 @@ export async function updateSessionData(c, sessionId, data) {
   await run(c.env.DB, 'UPDATE sessions SET data = ? WHERE id = ?', JSON.stringify(data), sessionId);
 }
 
+// SHA-256 hex — used to store reset/invite tokens hashed at rest.
+export async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+  return toHex(buf);
+}
+
 export { randomHex };
