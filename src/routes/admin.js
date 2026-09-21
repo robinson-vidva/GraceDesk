@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { html, raw } from 'hono/html';
 import { one, all, run } from '../db.js';
-import { requireAdmin } from '../middleware.js';
+import { requireAdmin, requireSuperAdmin } from '../middleware.js';
 import { adminShell, badge, table, toolbar, empty } from '../views/admin.js';
 import { card } from '../views/layout.js';
 import { field, submitBtn, alertBox } from '../views/forms.js';
@@ -438,6 +438,62 @@ admin.get('/reports/statement', async (c) => {
   return new Response(bytes, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${fname}"` } });
 });
 
+// --- Users (super admin) ---------------------------------------------------
+
+admin.get('/users', requireSuperAdmin, async (c) => {
+  const ctx = c.get('ctx');
+  const rows = await all(c.env.DB, `SELECT u.*, m.first_name AS mf, m.last_name AS ml FROM users u
+    LEFT JOIN members m ON m.id = u.member_id WHERE u.church_id = ? ORDER BY u.is_admin DESC, u.last_name, u.email`, cid(c));
+  const b = `${ctx.base}/admin/users`;
+  const body = table([
+    { head: 'Name', cell: (u) => `${u.first_name || u.mf || ''} ${u.last_name || u.ml || ''}`.trim() || '—' },
+    { head: 'Email', cell: (u) => u.email },
+    { head: 'Role', cell: (u) => u.is_admin ? html`<span class="badge badge-ok">admin${u.can_manage_admins ? ' · owner' : ''}</span>` : html`<span class="badge badge-muted">member</span>` },
+    { head: 'Status', cell: (u) => badge(u.is_active ? 'active' : 'inactive') },
+    { head: 'Last login', cell: (u) => u.last_login ? fmtWhen(u.last_login) : '—' },
+    { head: '', cell: (u) => u.can_manage_admins ? html`<span class="muted small">—</span>` : html`<div class="wrap-gap">
+        ${u.is_admin
+          ? html`<form method="post" action="${b}/${u.id}/revoke"><button class="btn btn-ghost btn-sm">Revoke admin</button></form>`
+          : html`<form method="post" action="${b}/${u.id}/promote"><button class="btn btn-ghost btn-sm">Make admin</button></form>`}
+        ${u.is_active
+          ? html`<form method="post" action="${b}/${u.id}/deactivate"><button class="btn btn-ghost btn-sm link-danger">Deactivate</button></form>`
+          : html`<form method="post" action="${b}/${u.id}/reactivate"><button class="btn btn-ghost btn-sm">Reactivate</button></form>`}
+      </div>` },
+  ], rows);
+  return c.html(adminShell(ctx, '/users', 'Users', body));
+});
+
+const userAction = (col, val, action) => async (c) => {
+  const ctx = c.get('ctx'); const id = c.req.param('id');
+  // Never let an admin change the owner account.
+  const u = await one(c.env.DB, 'SELECT can_manage_admins FROM users WHERE church_id=? AND id=?', cid(c), id);
+  if (u && !u.can_manage_admins) {
+    await run(c.env.DB, `UPDATE users SET ${col}=? WHERE church_id=? AND id=?`, val, cid(c), id);
+    await audit(c, action, 'user', id);
+  }
+  return c.redirect(`${ctx.base}/admin/users`);
+};
+admin.post('/users/:id/promote', requireSuperAdmin, userAction('is_admin', 1, 'promote'));
+admin.post('/users/:id/revoke', requireSuperAdmin, userAction('is_admin', 0, 'revoke'));
+admin.post('/users/:id/deactivate', requireSuperAdmin, userAction('is_active', 0, 'update'));
+admin.post('/users/:id/reactivate', requireSuperAdmin, userAction('is_active', 1, 'update'));
+
+// --- Audit log -------------------------------------------------------------
+
+admin.get('/audit', async (c) => {
+  const ctx = c.get('ctx');
+  const rows = await all(c.env.DB, `SELECT a.*, u.first_name, u.last_name, u.email FROM audit_logs a
+    LEFT JOIN users u ON u.id = a.user_id WHERE a.church_id = ? ORDER BY a.created_at DESC LIMIT 200`, cid(c));
+  const body = table([
+    { head: 'When', cell: (r) => fmtDateTime(r.created_at) },
+    { head: 'Who', cell: (r) => [r.first_name, r.last_name].filter(Boolean).join(' ') || r.email || 'system' },
+    { head: 'Action', cell: (r) => r.action },
+    { head: 'Entity', cell: (r) => [r.entity_type, r.entity_id].filter(Boolean).join(' #') || '—' },
+    { head: 'Details', cell: (r) => html`<span class="small muted">${r.details || ''}</span>` },
+  ], rows, 'No activity logged yet.');
+  return c.html(adminShell(ctx, '/audit', 'Audit log', body));
+});
+
 // --- helpers ---------------------------------------------------------------
 
 const METHOD_LABEL = (m) => ({ cash: 'Cash', check: 'Check', zelle: 'Zelle', bank_transfer: 'Bank transfer', zeffy: 'Zeffy', stripe: 'Stripe', paypal: 'PayPal', other: 'Other' }[m] || m);
@@ -549,4 +605,9 @@ function fmtWhen(iso) {
   if (!iso) return '';
   const d = new Date(iso.replace(' ', 'T') + 'Z');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function fmtDateTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso.replace(' ', 'T') + 'Z');
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
