@@ -15,33 +15,51 @@ const validEmail = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e || '');
 
 marketing.get('/', (c) => {
   const body = html`
-    <section class="hero">
-      <h1>Giving records for your church</h1>
-      <p>GraceDesk is a free tool for keeping track of what members give and sharing
-         those records with them. It does not collect or handle money.</p>
-      <div class="actions">
-        <a href="/signup" class="btn btn-primary">Set up your church</a>
-        <a href="/find" class="btn btn-ghost">Find your church</a>
-      </div>
-    </section>
+    <div class="split">
+      <section class="hero">
+        <h1>The giving record book for your church</h1>
+        <p>Write down each gift once. Members can then see their own record and
+           print a statement at tax time. GraceDesk is free, and it never handles money.</p>
+        <div class="actions">
+          <a href="/signup" class="btn btn-primary">Set up your church</a>
+          <a href="/find" class="btn btn-ghost">Find your church</a>
+        </div>
+      </section>
 
-    <h2 class="mt-3">What a church can do</h2>
-    <ul class="plain-list">
-      <li>Record gifts made by cash, check, Zelle, bank transfer or online.</li>
-      <li>Send a thank-you email with a Bible verse when a gift is recorded.</li>
-      <li>Approve new members and keep member and family details up to date.</li>
-      <li>Show the church's own name, logo and color.</li>
-    </ul>
+      <figure class="sample">
+        <figcaption>Example: what a member sees</figcaption>
+        <div class="sheet">
+          <div class="sheet-title">Mary Thomas</div>
+          <div class="muted small">Giving record, January</div>
+          <div class="table-wrap mt-1">
+            <table class="table">
+              <thead><tr><th>Date</th><th>Fund</th><th>Paid by</th><th class="num">Amount</th></tr></thead>
+              <tbody>
+                <tr><td>Jan 5</td><td>Tithe</td><td>Check</td><td class="num">$200.00</td></tr>
+                <tr><td>Jan 12</td><td>Building fund</td><td>Cash</td><td class="num">$50.00</td></tr>
+                <tr><td>Jan 19</td><td>Tithe</td><td>Zelle</td><td class="num">$200.00</td></tr>
+                <tr><td>Jan 26</td><td>Missions</td><td>Online</td><td class="num">$75.00</td></tr>
+                <tr class="total"><td colspan="3">Total for January</td><td class="num">$525.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </figure>
+    </div>
 
-    <h2 class="mt-3">What a member can do</h2>
-    <ul class="plain-list">
-      <li>See their own giving history.</li>
-      <li>Download monthly and yearly giving statements as PDF for tax filing.</li>
-      <li>Update their contact details.</li>
-    </ul>
+    <h2 class="mt-3">How it works</h2>
+    <ol class="steps">
+      <li><div><strong>The church records each gift.</strong>
+        Cash, check, Zelle, bank transfer or online. One at a time, or a whole Sunday at once.</div></li>
+      <li><div><strong>The member gets a thank-you.</strong>
+        An email with the amount, a receipt number and a Bible verse.</div></li>
+      <li><div><strong>The member prints a statement.</strong>
+        Monthly or yearly, as a PDF that is ready for tax filing.</div></li>
+    </ol>
 
-    <p class="muted mt-3">Each church sees only its own records. GraceDesk is open source and free to use.</p>`;
-  return c.html(layout({ ...G, title: 'Giving records for your church' }, body));
+    <p class="muted mt-3">Each church sees only its own records, under its own name, logo and color.
+      GraceDesk is open source.</p>`;
+  return c.html(layout({ ...G, title: 'The giving record book for your church' }, body));
 });
 
 // --- Find your church ------------------------------------------------------

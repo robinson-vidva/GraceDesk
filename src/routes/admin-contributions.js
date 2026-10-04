@@ -59,7 +59,7 @@ adminContributions.get('/', async (c) => {
         <a href="${b}/batch" class="btn btn-ghost btn-sm">Batch entry</a>
         <a href="${b}/new" class="btn btn-primary btn-sm">Record</a>
       </div>`)}
-    <p class="muted small mb-2">${rows.length} contribution(s), total ${formatMoney(total, cur)}</p>
+    <p class="muted small mb-2">${rows.length} contribution(s)</p>
     ${table([
       { head: 'Date', cell: (r) => r.date },
       { head: 'Member', cell: (r) => html`<a href="${ctx.base}/admin/contributions/${r.id}">${[r.first_name, r.last_name].filter(Boolean).join(' ')}</a>` },
@@ -67,7 +67,7 @@ adminContributions.get('/', async (c) => {
       { head: 'Method', cell: (r) => METHOD_LABELS[r.method] || r.method },
       { head: 'Category', cell: (r) => r.category || '-' },
       { head: 'Receipt', cell: (r) => r.receipt_number || '-' },
-    ], rows, 'No contributions recorded yet.')}`;
+    ], rows, 'No contributions recorded yet.', { label: 'Total', values: { Amount: formatMoney(total, cur) } })}`;
   return c.html(adminShell(ctx, '/contributions', 'Contributions', body));
 });
 

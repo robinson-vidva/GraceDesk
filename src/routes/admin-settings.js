@@ -19,7 +19,7 @@ const SUB = [['', 'General'], ['/email', 'Email'], ['/security', 'Security'], ['
 
 function subnav(ctx, active) {
   const b = `${ctx.base}/admin/settings`;
-  return html`<div class="admin-nav" style="margin-top:-0.4rem">
+  return html`<div class="sub-nav">
     ${SUB.map(([p, l]) => html`<a href="${b}${p}" class="${active === p ? 'active' : ''}">${l}</a>`)}</div>`;
 }
 const CURRENCIES = ['USD', 'CAD', 'EUR', 'GBP', 'AUD', 'INR', 'NGN', 'PHP', 'KES', 'ZAR', 'MXN', 'BRL'];

@@ -1,65 +1,80 @@
 /* GraceDesk stylesheet. No framework, no build step, no web fonts.
-   Each church's accent color is injected as --brand on :root in the page head. */
+
+   The look is a church record book: white paper, ruled lines tinted by the
+   church's own color, a red margin rule down the page, index tabs for the
+   admin sections, and accounting double rules under headers and totals.
+   Each church's color is injected as --brand on :root in the page head. */
 
 :root {
-  --brand: #1f5a6b;          /* default accent; overridden per church */
+  --brand: #1f5a6b;          /* default; overridden per church */
   --brand-ink: #163f4b;
   --link: var(--brand);
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --ink: #1a1a1a;
-  --muted: #595959;
-  --line: #dcdcdc;
-  --line-strong: #8c8c8c;    /* input borders: dark enough to see the field */
-  --subtle: #f4f4f4;         /* table head, hover */
+  --paper: #ffffff;
+  --ink: #16202a;            /* blue-black ink */
+  --muted: #55606b;
+  --margin: #dc5a52;         /* the margin rule */
   --danger: #a3261d;
   --danger-solid: #a3261d;
   --ok: #1f6b3a;
   --warn: #7a4a00;
-  --radius: 6px;
+  /* Rules and fills are mixed from the church color so every church's book matches its color. */
+  --rule: color-mix(in srgb, var(--brand) 20%, var(--paper));
+  --rule-strong: color-mix(in srgb, var(--brand) 50%, var(--paper));
+  --tint: color-mix(in srgb, var(--brand) 7%, var(--paper));
+  --field-line: color-mix(in srgb, var(--ink) 62%, var(--paper));
   --maxw: 60rem;
+  --gutter: 1.75rem;         /* space left of the content, where the margin rule runs */
 }
 
-/* Dark mode: follow the device unless the viewer picked light, and honour an
+/* Dark mode: follow the device unless the viewer picked light, and honor an
    explicit data-theme="dark" choice. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #161616; --surface: #1e1e1e; --ink: #ededed; --muted: #b0b0b0;
-    --line: #363636; --line-strong: #7d7d7d; --subtle: #272727;
+    --paper: #14181c; --ink: #e9edf0; --muted: #a9b2ba; --margin: #b9544e;
     --danger: #f2938a; --ok: #86cfa1; --warn: #e6b566;
-    --link: color-mix(in srgb, var(--brand) 45%, #ffffff);
+    --link: color-mix(in srgb, var(--brand) 42%, #ffffff);
+    --rule: color-mix(in srgb, var(--brand) 38%, var(--paper));
+    --rule-strong: color-mix(in srgb, var(--brand) 60%, #8a949c);
+    --tint: color-mix(in srgb, var(--brand) 16%, var(--paper));
   }
 }
 :root[data-theme="dark"] {
-  --bg: #161616; --surface: #1e1e1e; --ink: #ededed; --muted: #b0b0b0;
-  --line: #363636; --line-strong: #7d7d7d; --subtle: #272727;
+  --paper: #14181c; --ink: #e9edf0; --muted: #a9b2ba; --margin: #b9544e;
   --danger: #f2938a; --ok: #86cfa1; --warn: #e6b566;
-  --link: color-mix(in srgb, var(--brand) 45%, #ffffff);
+  --link: color-mix(in srgb, var(--brand) 42%, #ffffff);
+  --rule: color-mix(in srgb, var(--brand) 38%, var(--paper));
+  --rule-strong: color-mix(in srgb, var(--brand) 60%, #8a949c);
+  --tint: color-mix(in srgb, var(--brand) 16%, var(--paper));
 }
 
 * { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; background: var(--paper); }
 
 body {
   margin: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
   color: var(--ink);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
+  /* The margin rule: one line the full height of the page, just left of the content. */
+  background:
+    linear-gradient(var(--margin), var(--margin))
+    max(0.6rem, calc(50% - var(--maxw) / 2 + 0.6rem)) 0 / 2px 100% no-repeat,
+    var(--paper);
 }
 
 h1, h2, h3 {
-  font-weight: 700;
-  line-height: 1.25;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.012em;
   color: var(--ink);
   margin: 0 0 0.5em;
 }
-h1 { font-size: 1.6rem; }
+h1 { font-size: 1.7rem; }
 h2 { font-size: 1.25rem; }
 h3 { font-size: 1.05rem; }
 
@@ -75,34 +90,40 @@ a:focus-visible, button:focus-visible, .btn:focus-visible,
 
 p { margin: 0 0 0.9rem; }
 
-.container { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 1rem; }
-.main { flex: 1 0 auto; width: 100%; padding: 1.5rem 0 2.5rem; }
+.container {
+  width: 100%; max-width: var(--maxw); margin: 0 auto;
+  padding: 0 1rem 0 var(--gutter);
+}
+.main { flex: 1 0 auto; width: 100%; padding: 1.75rem 0 3rem; }
 .narrow { max-width: 27rem; margin: 0 auto; }
 .center { text-align: center; }
 .muted { color: var(--muted); }
 .small { font-size: 0.9rem; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.92em; }
 
-/* Header ------------------------------------------------------------------ */
-.site-header { background: var(--surface); border-bottom: 1px solid var(--line); }
+/* Header: the top of the page, closed with a double rule. --------------------- */
+.site-header { border-bottom: 3px double var(--rule-strong); }
 .site-header .container {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-  min-height: 56px; gap: 0.25rem 1rem; padding-top: 0.4rem; padding-bottom: 0.4rem;
+  min-height: 60px; gap: 0.25rem 1rem; padding-top: 0.45rem; padding-bottom: 0.45rem;
 }
 .brandmark {
-  display: flex; align-items: center; gap: 0.55rem;
-  font-size: 1.1rem; font-weight: 700; color: var(--ink); text-decoration: none;
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 1.15rem; font-weight: 750; letter-spacing: -0.012em;
+  color: var(--ink); text-decoration: none;
 }
 .brandmark .mark {
-  width: 30px; height: 30px; border-radius: 4px; display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 3px; display: grid; place-items: center;
   background: var(--brand); color: #fff; font-size: 1rem;
 }
-.brandmark img { width: 30px; height: 30px; border-radius: 4px; object-fit: cover; }
-.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.1rem; font-size: 0.95rem; }
+.brandmark img { width: 30px; height: 30px; border-radius: 3px; object-fit: cover; }
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.2rem; font-size: 0.95rem; }
 .nav a { color: var(--ink); text-decoration: none; padding: 0.5rem 0; }
 .nav a:hover { text-decoration: underline; }
 
 /* Footer ------------------------------------------------------------------ */
-.site-footer { border-top: 1px solid var(--line); }
+.site-footer { border-top: 1px solid var(--rule); }
 .site-footer .container {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 0.5rem 1.5rem; padding-top: 1.1rem; padding-bottom: 1.1rem;
@@ -118,26 +139,28 @@ p { margin: 0 0 0.9rem; }
 /* Buttons ----------------------------------------------------------------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
-  min-height: 44px; padding: 0.5rem 1.1rem;
-  border: 1px solid transparent; border-radius: var(--radius);
-  font: inherit; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none;
+  min-height: 44px; padding: 0.5rem 1.15rem;
+  border: 1.5px solid transparent; border-radius: 3px;
+  font: inherit; font-weight: 650; cursor: pointer; text-align: center; text-decoration: none;
 }
 .btn-primary { background: var(--brand); color: #fff; }
 .btn-primary:hover { background: var(--brand-ink); }
-.btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
-.btn-ghost:hover { background: var(--subtle); }
+.btn-ghost { background: var(--paper); color: var(--ink); border-color: var(--ink); }
+.btn-ghost:hover { background: var(--tint); }
 .btn-block { display: flex; width: 100%; }
-.btn-sm { min-height: 36px; padding: 0.3rem 0.7rem; font-size: 0.9rem; }
+.btn-sm { min-height: 38px; padding: 0.3rem 0.8rem; font-size: 0.92rem; }
 .btn-danger { background: var(--danger-solid); color: #fff; }
 .btn-danger:hover { background: #7f1d16; }
 .link-danger { color: var(--danger); }
 
-/* Cards ------------------------------------------------------------------- */
+/* Sheets: a framed section of the page. A thick rule on top, like a form header. */
 .card {
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper);
+  border: 1px solid var(--rule); border-top: 3px solid var(--rule-strong);
   padding: 1.25rem;
 }
 .card h1, .card h2, .card h3 { margin-top: 0; }
+.card h1 { font-size: 1.45rem; }
 
 .grid { display: grid; gap: 1rem; }
 @media (min-width: 640px) {
@@ -145,95 +168,154 @@ p { margin: 0 0 0.9rem; }
   .grid-3 { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* Forms ------------------------------------------------------------------- */
+/* Forms: fields are a filled line to write on. ------------------------------ */
 .field { display: block; margin-bottom: 1rem; }
-.field > .label { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--ink); }
+.field > .label { display: block; font-size: 0.95rem; font-weight: 650; margin-bottom: 0.3rem; color: var(--ink); }
 .field .req { color: var(--danger); }
 .field .hint { display: block; font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
 .input {
-  width: 100%; min-height: 44px; border: 1px solid var(--line-strong); border-radius: var(--radius);
+  width: 100%; min-height: 44px;
+  border: 1px solid var(--rule); border-bottom: 2px solid var(--field-line);
+  border-radius: 3px 3px 0 0;
   padding: 0.5rem 0.7rem; font-family: inherit; font-size: 1rem; /* 16px stops phones zooming in */
-  color: var(--ink); background: var(--surface);
+  color: var(--ink); background: var(--tint);
 }
+.input:hover { border-bottom-color: var(--ink); }
+.input:focus { border-bottom-color: var(--link); background: var(--paper); }
 .input::placeholder { color: var(--muted); opacity: 1; }
 textarea.input { min-height: 5rem; }
 select.input { appearance: auto; }
+input[type="color"].input { padding: 0.25rem; max-width: 5rem; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.75rem; }
 @media (max-width: 480px) { .row { grid-template-columns: 1fr; } }
-.divider { border: none; border-top: 1px solid var(--line); margin: 1.2rem 0; }
+.divider { border: none; border-top: 1px solid var(--rule); margin: 1.2rem 0; }
 
 /* Alerts ------------------------------------------------------------------ */
 .alert {
-  border: 1px solid; border-left-width: 4px; border-radius: var(--radius);
+  border: 1px solid; border-left-width: 5px;
   padding: 0.65rem 0.8rem; margin-bottom: 1rem; color: var(--ink);
 }
-.alert-error { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, var(--surface)); }
-.alert-ok { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 8%, var(--surface)); }
-.alert-info { border-color: var(--line-strong); background: var(--subtle); }
+.alert-error { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, var(--paper)); }
+.alert-ok { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 8%, var(--paper)); }
+.alert-info { border-color: var(--rule-strong); background: var(--tint); }
 
 /* Landing and church home -------------------------------------------------- */
-.hero { padding: 1.5rem 0 0.5rem; max-width: 40rem; }
-.hero h1 { font-size: 2rem; }
+.hero { padding: 0.75rem 0 0.5rem; max-width: 34rem; }
+.hero h1 { font-size: clamp(1.9rem, 5vw, 2.5rem); letter-spacing: -0.02em; }
 .hero p { font-size: 1.1rem; }
 .hero .actions, .actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.25rem; }
+.split { display: grid; gap: 2rem; align-items: start; }
+@media (min-width: 820px) { .split { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 3rem; } }
 .plain-list { max-width: 40rem; margin: 0; padding-left: 1.2rem; }
 .plain-list li { margin-bottom: 0.45rem; }
-.feature h3 { margin-bottom: 0.25rem; }
-.feature p { color: var(--muted); margin: 0; }
 
-/* Stat tiles -------------------------------------------------------------- */
+/* Numbered steps: the number sits like a line number in the book. */
+.steps { list-style: none; margin: 0; padding: 0; counter-reset: step; max-width: 40rem; border-top: 1px solid var(--rule); }
+.steps li {
+  counter-increment: step; display: grid; grid-template-columns: 2.4rem 1fr; gap: 0 0.5rem;
+  padding: 0.75rem 0; border-bottom: 1px solid var(--rule);
+}
+.steps li::before {
+  content: counter(step); font-weight: 750; font-size: 1.25rem; line-height: 1.2;
+  color: var(--link); font-variant-numeric: tabular-nums;
+}
+.steps strong { display: block; }
+
+/* A sample page from the book, used on the landing page. */
+.sample { margin: 0; }
+.sample figcaption { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.4rem; }
+.sample .sheet {
+  border: 1px solid var(--rule-strong); border-top: 3px solid var(--rule-strong);
+  padding: 0.9rem 1rem 0.4rem; background: var(--paper);
+}
+.sample .sheet-title { font-weight: 750; margin-bottom: 0.1rem; }
+
+/* Summary strip: figures side by side, divided by rules, closed by a double rule. */
+.tiles {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  overflow: hidden; border-top: 1px solid var(--rule-strong); border-bottom: 3px double var(--rule-strong);
+}
+.tiles > * {
+  border: 0; background: none; padding: 0.75rem 1rem; color: inherit; text-decoration: none;
+  box-shadow: -1px 0 0 var(--rule), 0 -1px 0 var(--rule);
+}
+.tiles > a:hover { background: var(--tint); }
 .stat .label { font-size: 0.9rem; color: var(--muted); }
-.stat .value { font-size: 1.6rem; font-weight: 700; margin-top: 0.1rem; }
-.tiles { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.stat .value { font-size: 1.65rem; font-weight: 750; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; margin-top: 0.05rem; }
 
 /* Small helpers ----------------------------------------------------------- */
 .stack > * + * { margin-top: 0.4rem; }
-.mt-1 { margin-top: 0.5rem; } .mt-2 { margin-top: 1rem; } .mt-3 { margin-top: 1.5rem; }
+.mt-1 { margin-top: 0.5rem; } .mt-2 { margin-top: 1rem; } .mt-3 { margin-top: 1.75rem; }
 .mb-2 { margin-bottom: 1rem; }
 .flex { display: flex; gap: 0.6rem; align-items: center; }
 .between { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .wrap-gap { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.meter { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.meter { height: 8px; background: var(--rule); overflow: hidden; }
 .meter > div { height: 100%; background: var(--brand); }
 
-/* Admin -------------------------------------------------------------------- */
+/* Admin: index tabs along the top of the book. ------------------------------ */
 .admin-nav {
-  display: flex; flex-wrap: wrap; gap: 0 0.25rem; border-bottom: 1px solid var(--line);
-  margin-bottom: 1.25rem;
+  display: flex; flex-wrap: wrap; gap: 0.3rem 0.25rem; align-items: flex-end;
+  border-bottom: 1px solid var(--rule-strong); margin-bottom: 1.4rem;
 }
 .admin-nav a {
-  padding: 0.6rem 0.75rem; color: var(--ink); font-size: 0.95rem; text-decoration: none;
-  border-bottom: 3px solid transparent; margin-bottom: -1px;
+  padding: 0.5rem 0.8rem; color: var(--ink); font-size: 0.95rem; text-decoration: none;
+  background: var(--tint); border: 1px solid var(--rule); border-bottom: 0;
+  border-radius: 6px 6px 0 0;
 }
-.admin-nav a:hover { background: var(--subtle); }
-.admin-nav a.active { border-bottom-color: var(--link); font-weight: 700; }
-.page-title { font-size: 1.5rem; margin-bottom: 1rem; }
+.admin-nav a:hover { background: var(--paper); border-color: var(--rule-strong); }
+.admin-nav a.active {
+  background: var(--paper); font-weight: 750;
+  border-color: var(--rule-strong); border-top: 3px solid var(--brand);
+  margin-bottom: -1px; padding-bottom: calc(0.5rem + 1px);
+}
+/* Second-level sections inside a tab. */
+.sub-nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.2rem; margin: -0.4rem 0 1.25rem; }
+.sub-nav a { color: var(--ink); padding: 0.35rem 0; text-decoration: none; border-bottom: 3px solid transparent; }
+.sub-nav a:hover { border-bottom-color: var(--rule-strong); }
+.sub-nav a.active { font-weight: 750; border-bottom-color: var(--brand); }
+.page-title { font-size: 1.6rem; margin-bottom: 1rem; }
 
 .toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-bottom: 1rem; }
 .toolbar .input, .toolbar select { width: auto; }
 .toolbar input[type="search"] { flex: 1 1 16rem; }
 
+/* Status, like a stamp on the record. */
 .badge {
-  display: inline-block; font-size: 0.8rem; font-weight: 600; text-transform: capitalize;
-  padding: 0.05rem 0.45rem; border-radius: 4px; border: 1px solid; background: var(--surface);
+  display: inline-block; font-size: 0.8rem; font-weight: 700; text-transform: capitalize;
+  padding: 0 0.4rem; border: 1.5px solid; border-radius: 2px; background: var(--paper);
 }
 .badge-ok { color: var(--ok); }
 .badge-warn { color: var(--warn); }
 .badge-muted { color: var(--muted); }
 
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-.table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-.table th, .table td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
-.table th { font-weight: 700; background: var(--subtle); }
-.table tbody tr:last-child td { border-bottom: none; }
-.table tbody tr:hover { background: var(--subtle); }
+/* Tables are ledger pages: ruled lines, no boxes, figures aligned right. */
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.97rem; }
+.table th, .table td { text-align: left; padding: 0.55rem 0.8rem 0.55rem 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.table th { font-weight: 750; border-bottom: 2px solid var(--rule-strong); vertical-align: bottom; }
+.table th.num, .table td.num { text-align: right; font-variant-numeric: tabular-nums; padding-right: 0.2rem; }
+.table th.num + th, .table td.num + td { padding-left: 1.2rem; }
+.table tbody tr:hover { background: var(--tint); }
+.table tbody tr:last-child td { border-bottom-color: var(--rule-strong); }
 .table td.wrap { white-space: normal; }
+.table tbody tr.total td { font-weight: 750; border-top: 1px solid var(--ink); border-bottom: 3px double var(--ink); }
+.table tbody tr.total:hover { background: none; }
 
+/* Nothing recorded yet: blank ruled lines waiting for the first entry. */
 .empty {
-  border: 1px dashed var(--line-strong); border-radius: var(--radius); padding: 1.5rem 1rem;
-  text-align: center; color: var(--muted);
+  color: var(--muted); padding: 0 0.1rem; min-height: 6.3rem; line-height: 2.1rem;
+  background: repeating-linear-gradient(to bottom, transparent 0 calc(2.1rem - 1px), var(--rule) calc(2.1rem - 1px) 2.1rem);
 }
 
 dl.detail { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; margin: 0; }
 dl.detail dt { color: var(--muted); }
 dl.detail dd { margin: 0; }
+
+/* Phones: slimmer tabs so the index fits in fewer rows. */
+@media (max-width: 480px) {
+  .admin-nav { gap: 0.25rem 0.2rem; }
+  .admin-nav a { padding: 0.4rem 0.55rem; font-size: 0.9rem; }
+  .admin-nav a.active { padding-bottom: calc(0.4rem + 1px); }
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+}

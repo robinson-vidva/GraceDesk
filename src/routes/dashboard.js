@@ -48,13 +48,13 @@ dashboard.get('/dashboard', requireAuth, async (c) => {
   }
 
   const body = html`
-    <h1 style="font-size:1.7rem;margin-bottom:0.1rem">Welcome, ${ctx.user.first_name || 'friend'}</h1>
+    <h1 style="margin-bottom:0.1rem">Welcome, ${ctx.user.first_name || 'friend'}</h1>
     <p class="muted" style="margin-top:0">${ctx.settings.church_name}</p>
 
     ${member ? html`
-      <div class="grid grid-2 mt-2 mb-2">
-        ${card(html`<div class="stat"><div class="label">Given this year</div><div class="value">${formatMoney(totals.year, cur)}</div></div>`)}
-        ${card(html`<div class="stat"><div class="label">Given this month</div><div class="value">${formatMoney(totals.month, cur)}</div></div>`)}
+      <div class="tiles mt-2 mb-2">
+        <div class="stat"><div class="label">Given this year</div><div class="value">${formatMoney(totals.year, cur)}</div></div>
+        <div class="stat"><div class="label">Given this month</div><div class="value">${formatMoney(totals.month, cur)}</div></div>
       </div>
       ${card(html`
         <div class="between mb-2"><div class="label muted small">Recent giving</div><a class="small" href="${b}/contributions">View all</a></div>
@@ -120,8 +120,8 @@ dashboard.get('/contributions', requireAuth, async (c) => {
         <a href="${b}/contributions?view=family" class="btn ${view === 'family' ? 'btn-primary' : 'btn-ghost'} btn-sm">Family</a>
       </div>` : ''}
     </div>
-    <p class="muted small mb-2">${rows.length} contribution(s), total ${formatMoney(total, cur)}</p>
-    ${table(cols, rows, 'No contributions to show.')}
+    <p class="muted small mb-2">${rows.length} contribution(s)</p>
+    ${table(cols, rows, 'No contributions to show.', { label: 'Total', values: { Amount: formatMoney(total, cur) } })}
     <p class="small mt-2"><a href="${b}/reports">Download a statement</a></p>`;
   return c.html(layout({ ...ctx, title }, body));
 });

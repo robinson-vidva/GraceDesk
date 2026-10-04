@@ -46,15 +46,25 @@ export function empty(message) {
   return html`<div class="empty">${message}</div>`;
 }
 
-// Renders a simple table. columns: [{head, cell(row)}]. rows: array.
-export function table(columns, rows, emptyMsg = 'Nothing here yet.') {
+// Columns that hold figures are right-aligned so the digits line up, as in a ledger.
+const FIGURE_HEADS = new Set(['Amount', 'Pledged', 'Received', 'Gifts', 'Count', 'Support', 'Members']);
+const isFigure = (c) => c.num ?? FIGURE_HEADS.has(c.head);
+const headClass = (c) => isFigure(c) ? 'num' : '';
+const cellClass = (c) => isFigure(c) ? 'num' : c.head === 'Receipt' ? 'mono' : '';
+
+// Renders a simple table. columns: [{head, cell(row), num?}]. rows: array.
+// `total` is optional: { label, values: { [head]: text } } adds a closing row
+// with the column totals under a double rule.
+export function table(columns, rows, emptyMsg = 'Nothing here yet.', total = null) {
   if (!rows.length) return empty(emptyMsg);
   return html`
     <div class="table-wrap">
       <table class="table">
-        <thead><tr>${columns.map((c) => html`<th>${c.head}</th>`)}</tr></thead>
+        <thead><tr>${columns.map((c) => html`<th class="${headClass(c)}">${c.head}</th>`)}</tr></thead>
         <tbody>
-          ${rows.map((r) => html`<tr>${columns.map((c) => html`<td>${c.cell(r)}</td>`)}</tr>`)}
+          ${rows.map((r) => html`<tr>${columns.map((c) => html`<td class="${cellClass(c)}">${c.cell(r)}</td>`)}</tr>`)}
+          ${total ? html`<tr class="total">${columns.map((c, i) => html`<td class="${headClass(c)}">${
+            total.values[c.head] ?? (i === 0 ? total.label : '')}</td>`)}</tr>` : ''}
         </tbody>
       </table>
     </div>`;
