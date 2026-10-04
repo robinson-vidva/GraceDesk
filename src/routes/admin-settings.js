@@ -72,13 +72,13 @@ adminSettings.get('/', async (c) => {
         </div>
         <div class="mt-2">${submitBtn('Save modules')}</div>
       </form>`)}
-    ${card(html`
+    ${c.env.FILES ? card(html`
       <div class="label muted small mb-2">Church logo</div>
       ${s.church_logo_key ? html`<img src="${ctx.base}/logo" alt="logo" style="height:56px;border-radius:8px;margin-bottom:0.6rem" /><br/>` : html`<p class="muted small">No logo uploaded.</p>`}
       <form method="post" action="${ctx.base}/admin/settings/logo" enctype="multipart/form-data" class="wrap-gap">
         <input class="input" type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" required style="width:auto" />
         <button class="btn btn-ghost btn-sm">Upload</button>
-      </form>`)}
+      </form>`) : ''}
     ${ctx.user.can_manage_admins ? card(html`
       <div class="label muted small mb-2">Data</div>
       <p class="muted small">Download a full backup of this church's data as JSON. Your data is yours.</p>
@@ -114,7 +114,7 @@ adminSettings.post('/logo', async (c) => {
   const ctx = c.get('ctx'); const churchId = cid(c);
   const form = await c.req.parseBody();
   const file = form.logo;
-  if (file && typeof file === 'object' && file.arrayBuffer) {
+  if (c.env.FILES && file && typeof file === 'object' && file.arrayBuffer) {
     const ext = (file.name || '').split('.').pop()?.toLowerCase() || 'png';
     const key = `logos/${churchId}/logo-${Date.now()}.${ext}`;
     await c.env.FILES.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type || 'image/png' } });

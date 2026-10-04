@@ -15,16 +15,19 @@ assets = { directory = "./public", binding = "ASSETS" }
 [[d1_databases]]
 binding = "DB"
 database_name = "gracedesk"
-database_id = "local"          # replace with real id from `wrangler d1 create gracedesk`
+database_id = "37981c1d-cac5-400d-a66c-e9c9807d6d74"
 migrations_dir = "migrations"
 
 # ---------------------------------------------------------------------------
-# Cloudflare R2 — object storage for church logos, member photos, and cached
-# PDF reports. Create with:  wrangler r2 bucket create gracedesk-files
+# Cloudflare R2 — object storage for church logos and cached PDF reports.
+# Optional: the app runs without it (logos disabled, PDFs built fresh each time).
+# To enable: turn on R2 in the dashboard, run
+#   wrangler r2 bucket create gracedesk-files
+# then uncomment the binding below and redeploy.
 # ---------------------------------------------------------------------------
-[[r2_buckets]]
-binding = "FILES"
-bucket_name = "gracedesk-files"
+# [[r2_buckets]]
+# binding = "FILES"
+# bucket_name = "gracedesk-files"
 
 # Daily jobs: birthday/anniversary greetings, and monthly summaries on the 1st.
 [triggers]

@@ -70,7 +70,7 @@ church.use('*', loadChurchContext);
 // Serve this church's logo from R2.
 church.get('/logo', async (c) => {
   const key = c.get('ctx').settings?.church_logo_key;
-  if (!key) return c.notFound();
+  if (!key || !c.env.FILES) return c.notFound();
   const obj = await c.env.FILES.get(key);
   if (!obj) return c.notFound();
   return new Response(obj.body, {

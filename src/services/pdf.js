@@ -101,6 +101,19 @@ export async function buildStatement(settings, member, rows, { type, year, month
 export async function getOrBuildStatement(env, settings, member, { type, year, month }) {
   const churchId = settings.church_id;
   const key = `reports/${churchId}/${member.id}/${type}-${year}${type === 'monthly' ? '-' + month : ''}.pdf`;
+  const buildRows = async () => {
+    let rows = await memberContributions(env.DB, churchId, member.id, { year });
+    if (type === 'monthly') {
+      const mm = String(month).padStart(2, '0');
+      rows = rows.filter((r) => r.date.slice(0, 7) === `${year}-${mm}`);
+    }
+    return rows.slice().reverse(); // chronological in the statement
+  };
+
+  // Without R2 configured, generate fresh each time (no caching).
+  if (!env.FILES) {
+    return buildStatement(settings, member, await buildRows(), { type, year: Number(year), month: Number(month) });
+  }
 
   const cached = await one(env.DB,
     `SELECT * FROM report_cache WHERE church_id=? AND member_id=? AND report_type=? AND period_year=? AND period_month IS ? AND is_valid=1`,
@@ -110,14 +123,7 @@ export async function getOrBuildStatement(env, settings, member, { type, year, m
     if (obj) return new Uint8Array(await obj.arrayBuffer());
   }
 
-  // Build fresh.
-  let rows = await memberContributions(env.DB, churchId, member.id, { year });
-  if (type === 'monthly') {
-    const mm = String(month).padStart(2, '0');
-    rows = rows.filter((r) => r.date.slice(0, 7) === `${year}-${mm}`);
-  }
-  rows = rows.slice().reverse(); // chronological in the statement
-  const bytes = await buildStatement(settings, member, rows, { type, year: Number(year), month: Number(month) });
+  const bytes = await buildStatement(settings, member, await buildRows(), { type, year: Number(year), month: Number(month) });
 
   await env.FILES.put(key, bytes, { httpMetadata: { contentType: 'application/pdf' } });
   // Upsert cache row.
