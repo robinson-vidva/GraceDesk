@@ -3,7 +3,9 @@
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { one, run } from './db.js';
 
-const PBKDF2_ITERATIONS = 210000; // OWASP-recommended for PBKDF2-SHA256
+// 100,000 keeps a hash near the Workers Free plan's 10 ms CPU budget per request.
+// Stored hashes carry their own iteration count, so older hashes still verify.
+const PBKDF2_ITERATIONS = 100000;
 const SESSION_COOKIE = 'gd_session';
 const SESSION_TTL_DAYS = 30;
 
