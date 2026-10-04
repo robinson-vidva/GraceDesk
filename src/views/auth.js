@@ -47,7 +47,7 @@ export function registeredPage(ctx) {
   const inner = html`
     ${alertBox('success', 'Thank you for registering!')}
     <p class="small">An admin will review and approve your account. You'll receive an email when it's approved and you can log in.</p>
-    <div class="mt-2"><a href="${ctx.base}/" class="small">← Back to home</a></div>`;
+    <div class="mt-2"><a href="${ctx.base}/" class="small">Back to home</a></div>`;
   return layout({ ...ctx, title: 'Registered' }, authCard('Registration received', inner));
 }
 
@@ -57,7 +57,7 @@ export function forgotPage(ctx, env, { error, sent, devLink } = {}) {
     const inner = html`
       ${alertBox('success', 'If that email is registered, a reset link has been sent.')}
       ${devLink ? html`<p class="small muted mt-1">Dev link: <a style="word-break:break-all" href="${devLink}">${devLink}</a></p>` : ''}
-      <div class="mt-2"><a href="${b}/login" class="small">← Back to login</a></div>`;
+      <div class="mt-2"><a href="${b}/login" class="small">Back to login</a></div>`;
     return layout({ ...ctx, title: 'Reset password' }, authCard('Check your email', inner));
   }
   const inner = html`

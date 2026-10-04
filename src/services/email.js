@@ -76,7 +76,7 @@ export function emailShell(settings, innerHtml) {
       ${innerHtml}
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0" />
       <div style="font-size:12px;color:#64748b">
-        ${name}${settings?.church_phone ? ' · ' + settings.church_phone : ''}${settings?.church_email ? ' · ' + settings.church_email : ''}<br/>
+        ${name}${settings?.church_phone ? ' | ' + settings.church_phone : ''}${settings?.church_email ? ' | ' + settings.church_email : ''}<br/>
         Powered by GraceDesk
       </div>
     </div>

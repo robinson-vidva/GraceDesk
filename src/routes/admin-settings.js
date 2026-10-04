@@ -67,7 +67,7 @@ adminSettings.get('/', async (c) => {
           ${MODULES.map(([key, label, desc]) => html`
             <label class="flex" style="align-items:flex-start;gap:0.5rem">
               <input type="checkbox" name="${key}" ${raw(s[key] ? 'checked' : '')} style="margin-top:0.2rem" />
-              <span><strong class="small">${label}</strong><span class="muted small"> — ${desc}</span></span>
+              <span><strong class="small">${label}</strong><span class="muted small">: ${desc}</span></span>
             </label>`)}
         </div>
         <div class="mt-2">${submitBtn('Save modules')}</div>
@@ -140,7 +140,7 @@ adminSettings.get('/email', async (c) => {
       ${field({ label: 'Email banner image URL', name: 'email_image_url', value: s.email_image_url || '' })}
       ${submitBtn('Save email settings')}
     </form>
-    <p class="small mt-2"><a href="${ctx.base}/admin/emails">View email log &amp; delivery status →</a></p>`)}`;
+    <p class="small mt-2"><a href="${ctx.base}/admin/emails">View email log and delivery status</a></p>`)}`;
   return c.html(adminShell(ctx, '/settings', 'Settings', body));
 });
 

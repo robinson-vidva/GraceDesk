@@ -44,7 +44,7 @@ admin.get('/', async (c) => {
 
   const body = html`
     <form method="get" action="${b}/search" class="toolbar mb-2" style="margin-bottom:1rem">
-      <input class="input" type="search" name="q" placeholder="Search members, receipts…" style="max-width:24rem" />
+      <input class="input" type="search" name="q" placeholder="Search members or receipts" style="max-width:24rem" />
       <button class="btn btn-ghost btn-sm">Search</button>
     </form>
     <div class="tiles mb-2">
@@ -62,7 +62,7 @@ admin.get('/', async (c) => {
     ${card(html`<div class="label muted small">Recent activity</div>
       ${recent.length ? html`<div class="stack mt-1">${recent.map((r) => html`
         <div class="small"><strong>${[r.first_name, r.last_name].filter(Boolean).join(' ') || 'Someone'}</strong>
-          ${r.action} ${r.entity_type || ''} <span class="muted">· ${fmtWhen(r.created_at)}</span></div>`)}</div>`
+          ${r.action} ${r.entity_type || ''} <span class="muted">${fmtWhen(r.created_at)}</span></div>`)}</div>`
         : html`<p class="muted small mt-1">No activity yet.</p>`}`)}`;
   return c.html(adminShell(ctx, '', 'Overview', body));
 });
@@ -83,14 +83,14 @@ admin.get('/search', async (c) => {
   }
   const body = html`
     <form method="get" action="${b}/admin/search" class="toolbar mb-2">
-      <input class="input" type="search" name="q" value="${q}" placeholder="Search members, receipts…" style="max-width:24rem" autofocus />
+      <input class="input" type="search" name="q" value="${q}" placeholder="Search members or receipts" style="max-width:24rem" autofocus />
       <button class="btn btn-primary btn-sm">Search</button>
     </form>
     ${!q ? empty('Type a name, email, or receipt number.') : html`
       ${card(html`<div class="label muted small mb-2">Members (${members.length})</div>
         ${members.length ? table([
           { head: 'Name', cell: (m) => html`<a href="${b}/admin/members/${m.id}">${fullName(m)}</a>` },
-          { head: 'Email', cell: (m) => m.email || '—' },
+          { head: 'Email', cell: (m) => m.email || '-' },
           { head: 'Status', cell: (m) => badge(m.membership_status) },
         ], members) : empty('No members matched.')}`)}
       <div class="mt-2">${card(html`<div class="label muted small mb-2">Contributions (${contribs.length})</div>
@@ -98,7 +98,7 @@ admin.get('/search', async (c) => {
           { head: 'Date', cell: (r) => r.date },
           { head: 'Member', cell: (r) => `${r.first_name} ${r.last_name}` },
           { head: 'Amount', cell: (r) => formatMoney(r.amount, r.currency || cur) },
-          { head: 'Receipt', cell: (r) => html`<a href="${b}/admin/contributions/${r.id}">${r.receipt_number || '—'}</a>` },
+          { head: 'Receipt', cell: (r) => html`<a href="${b}/admin/contributions/${r.id}">${r.receipt_number || '-'}</a>` },
         ], contribs) : empty('No contributions matched.')}`)}</div>`}`;
   return c.html(adminShell(ctx, '', q ? `Search: ${q}` : 'Search', body));
 });
@@ -127,9 +127,9 @@ admin.get('/members', async (c) => {
       </div>`)}
     ${table([
       { head: 'Name', cell: (m) => html`<a href="${b}/members/${m.id}">${fullName(m)}</a>` },
-      { head: 'Email', cell: (m) => m.email || html`<span class="muted">—</span>` },
-      { head: 'Phone', cell: (m) => parsePhones(m.phones)[0] || html`<span class="muted">—</span>` },
-      { head: 'Family', cell: (m) => m.family_name || html`<span class="muted">—</span>` },
+      { head: 'Email', cell: (m) => m.email || html`<span class="muted">-</span>` },
+      { head: 'Phone', cell: (m) => parsePhones(m.phones)[0] || html`<span class="muted">-</span>` },
+      { head: 'Family', cell: (m) => m.family_name || html`<span class="muted">-</span>` },
       { head: 'Status', cell: (m) => badge(m.membership_status) },
     ], rows, 'No members match.')}`;
   return c.html(adminShell(ctx, '/members', 'Members', body));
@@ -143,7 +143,7 @@ admin.get('/members/pending', async (c) => {
       <div class="between">
         <div>
           <div><strong>${fullName(m)}</strong></div>
-          <div class="muted small">${m.email || 'no email'} · registered ${fmtWhen(m.created_at)}</div>
+          <div class="muted small">${m.email || 'no email'}, registered ${fmtWhen(m.created_at)}</div>
         </div>
         <div class="wrap-gap">
           <form method="post" action="${b}/members/${m.id}/approve"><button class="btn btn-primary btn-sm">Approve</button></form>
@@ -168,8 +168,8 @@ admin.post('/members/:id/approve', async (c) => {
       to: m.email, type: 'welcome', memberId: m.id,
       subject: `Welcome to ${ctx.settings.church_name}`,
       html: emailShell(ctx.settings, `<p>Dear ${m.first_name},</p>
-        <p>Your account has been approved. You can now sign in to view your giving and download statements.</p>
-        <p style="margin:20px 0"><a href="${login}" style="background:${ctx.settings.primary_color};color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Sign in</a></p>`),
+        <p>Your account has been approved. You can now log in to view your giving and download statements.</p>
+        <p style="margin:20px 0"><a href="${login}" style="background:${ctx.settings.primary_color};color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Log in</a></p>`),
     });
   }
   return c.redirect(`${ctx.base}/admin/members/pending`);
@@ -211,7 +211,7 @@ admin.get('/members/import', (c) => {
     <p class="muted small">Include a header row. Recognized columns: <code>first_name, last_name, email, phone, city, state</code>. Everyone is imported as an active member (no login).</p>
     <form method="post" action="${b}/import" enctype="multipart/form-data" class="mt-1">
       <input class="input" type="file" name="file" accept=".csv,text/csv" />
-      <p class="muted small mt-1">…or paste CSV:</p>
+      <p class="muted small mt-1">Or paste CSV:</p>
       <textarea class="input" name="csv" rows="6" placeholder="first_name,last_name,email,phone&#10;Jane,Doe,jane@example.com,555-1234"></textarea>
       ${submitBtn('Import')}
     </form>`);
@@ -292,7 +292,7 @@ admin.post('/members/new', async (c) => {
       to: d.email, type: 'invite', memberId,
       subject: `You've been added to ${ctx.settings.church_name}`,
       html: emailShell(ctx.settings, `<p>Dear ${d.first_name},</p>
-        <p>An account has been created for you at ${ctx.settings.church_name}. Set your password to sign in.</p>
+        <p>An account has been created for you at ${ctx.settings.church_name}. Set your password to log in.</p>
         <p style="margin:20px 0"><a href="${link}" style="background:${ctx.settings.primary_color};color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Set your password</a></p>`),
     });
   }
@@ -332,31 +332,31 @@ admin.get('/members/:id', async (c) => {
     </div>
     <div class="grid grid-2">
       ${card(html`<dl class="detail">
-        <dt>Email</dt><dd>${m.email || '—'}</dd>
-        <dt>Phone</dt><dd>${phones.join(', ') || '—'}</dd>
-        <dt>Address</dt><dd>${[m.address_line1, m.address_line2, m.city, m.state, m.postal_code].filter(Boolean).join(', ') || '—'}</dd>
-        <dt>Birthday</dt><dd>${m.dob_month ? `${MONTHS[m.dob_month]} ${m.dob_day}` : '—'}</dd>
-        <dt>Anniversary</dt><dd>${m.anniversary_month ? `${MONTHS[m.anniversary_month]} ${m.anniversary_day}` : '—'}</dd>
-        <dt>Family</dt><dd>${family ? html`<a href="${b}/families/${family.id}">${family.family_name}</a> ${m.family_role ? `(${m.family_role})` : ''}` : '—'}</dd>
+        <dt>Email</dt><dd>${m.email || '-'}</dd>
+        <dt>Phone</dt><dd>${phones.join(', ') || '-'}</dd>
+        <dt>Address</dt><dd>${[m.address_line1, m.address_line2, m.city, m.state, m.postal_code].filter(Boolean).join(', ') || '-'}</dd>
+        <dt>Birthday</dt><dd>${m.dob_month ? `${MONTHS[m.dob_month]} ${m.dob_day}` : '-'}</dd>
+        <dt>Anniversary</dt><dd>${m.anniversary_month ? `${MONTHS[m.anniversary_month]} ${m.anniversary_day}` : '-'}</dd>
+        <dt>Family</dt><dd>${family ? html`<a href="${b}/families/${family.id}">${family.family_name}</a> ${m.family_role ? `(${m.family_role})` : ''}` : '-'}</dd>
       </dl>${m.notes ? html`<p class="small muted mt-2">${m.notes}</p>` : ''}`)}
       ${card(html`<div class="label muted small mb-2">Recent giving</div>
         ${contribs.length ? table([
           { head: 'Date', cell: (x) => x.date },
           { head: 'Amount', cell: (x) => formatMoney(x.amount, x.currency || cur) },
-          { head: 'Category', cell: (x) => x.category || '—' },
-          { head: 'Receipt', cell: (x) => x.receipt_number || '—' },
+          { head: 'Category', cell: (x) => x.category || '-' },
+          { head: 'Receipt', cell: (x) => x.receipt_number || '-' },
         ], contribs) : empty('No contributions recorded yet.')}`)}
     </div>
     ${notes !== null ? card(html`
       <div class="label muted small mb-2">Pastoral notes <span class="badge badge-muted">private</span></div>
       <form method="post" action="${b}/members/${id}/notes" class="mb-2">
-        <textarea class="input" name="body" rows="2" placeholder="Add a private note…" required></textarea>
+        <textarea class="input" name="body" rows="2" placeholder="Add a private note" required></textarea>
         <div class="mt-1"><button class="btn btn-primary btn-sm">Add note</button></div>
       </form>
       ${notes.length ? html`<div class="stack">${notes.map((n) => html`
         <div class="between" style="align-items:flex-start;gap:0.6rem;border-top:1px solid var(--line);padding-top:0.5rem">
           <div><div class="small">${n.body}</div>
-            <div class="muted" style="font-size:0.75rem">${[n.first_name, n.last_name].filter(Boolean).join(' ') || 'Admin'} · ${fmtDateTime(n.created_at)}</div></div>
+            <div class="muted" style="font-size:0.75rem">${[n.first_name, n.last_name].filter(Boolean).join(' ') || 'Admin'}, ${fmtDateTime(n.created_at)}</div></div>
           <form method="post" action="${b}/members/${id}/notes/${n.id}/delete" onsubmit="return confirm('Delete this note?')"><button class="btn btn-ghost btn-sm link-danger">Delete</button></form>
         </div>`)}</div>` : html`<p class="muted small">No notes yet.</p>`}`, 'mt-2') : ''}`;
   return c.html(adminShell(ctx, '/members', fullName(m), body));
@@ -418,7 +418,7 @@ admin.get('/families', async (c) => {
     </form>`)}
     <div class="mt-2">${table([
       { head: 'Family', cell: (f) => html`<a href="${b}/families/${f.id}">${f.family_name}</a>` },
-      { head: 'Head', cell: (f) => [f.head_first, f.head_last].filter(Boolean).join(' ') || html`<span class="muted">—</span>` },
+      { head: 'Head', cell: (f) => [f.head_first, f.head_last].filter(Boolean).join(' ') || html`<span class="muted">-</span>` },
       { head: 'Members', cell: (f) => f.member_count },
     ], rows, 'No families yet.')}</div>`;
   return c.html(adminShell(ctx, '/families', 'Families', body));
@@ -452,7 +452,7 @@ admin.get('/families/:id', async (c) => {
       <form class="between" method="post" action="${b}/families/${id}/rename" style="gap:0.6rem">
         <input class="input" name="family_name" value="${f.family_name}" />
         <select class="input" name="head_member_id">
-          <option value="">— head of household —</option>
+          <option value="">Choose the head of household</option>
           ${members.map((m) => html`<option value="${m.id}" ${raw(m.id === f.head_member_id ? 'selected' : '')}>${fullName(m)}</option>`)}
         </select>
         <button class="btn btn-ghost btn-sm">Save</button>
@@ -460,14 +460,14 @@ admin.get('/families/:id', async (c) => {
 
     <div class="mt-2">${table([
       { head: 'Member', cell: (m) => html`<a href="${b}/members/${m.id}">${fullName(m)}</a>` },
-      { head: 'Role', cell: (m) => m.family_role || '—' },
+      { head: 'Role', cell: (m) => m.family_role || '-' },
       { head: '', cell: (m) => html`<form method="post" action="${b}/families/${id}/remove"><input type="hidden" name="member_id" value="${m.id}"/><button class="btn btn-ghost btn-sm link-danger">Remove</button></form>` },
     ], members, 'No members in this family yet.')}</div>
 
     ${others.length ? card(html`<div class="label muted small mb-2">Add a member</div>
       <form class="between" method="post" action="${b}/families/${id}/assign" style="gap:0.6rem">
         <select class="input" name="member_id" required>
-          <option value="">Choose a member…</option>
+          <option value="">Choose a member</option>
           ${others.map((m) => html`<option value="${m.id}">${m.first_name} ${m.last_name}</option>`)}
         </select>
         <select class="input" name="role">${ROLES.map((r) => html`<option value="${r}">${cap(r)}</option>`)}</select>
@@ -543,14 +543,14 @@ admin.get('/reports', async (c) => {
       ${tile(`Given in ${year - 1}`, formatMoney(yr.last_year, cur))}
       ${tile('Change', pctChange(yr.last_year, yr.this_year))}
     </div>
-    ${card(html`<div class="label muted small mb-2">Giving by month · ${year}</div>${barChart(monthTotals, cur)}`)}
+    ${card(html`<div class="label muted small mb-2">Giving by month, ${year}</div>${barChart(monthTotals, cur)}`)}
     <div class="grid grid-2 mt-2">
       ${card(html`<div class="label muted small mb-2">By category</div>${breakdown(byCat.map((r) => [r.name, r.total]), cur)}`)}
       ${card(html`<div class="label muted small mb-2">By method</div>${breakdown(byMethod.map((r) => [METHOD_LABEL(r.method), r.total]), cur)}`)}
     </div>
     ${card(html`<div class="label muted small mb-2">Generate a member statement</div>
       <form method="get" action="${b}/reports/statement" class="toolbar" style="margin:0;flex-wrap:wrap">
-        <select class="input" name="member" required><option value="">Choose a member…</option>
+        <select class="input" name="member" required><option value="">Choose a member</option>
           ${members.map((m) => html`<option value="${m.id}">${m.last_name}, ${m.first_name}</option>`)}</select>
         <select class="input" name="type"><option value="annual">Annual</option><option value="monthly">Monthly</option></select>
         <input class="input" type="number" name="year" value="${year}" style="width:6rem" />
@@ -583,12 +583,12 @@ admin.get('/users', requireSuperAdmin, async (c) => {
     LEFT JOIN members m ON m.id = u.member_id WHERE u.church_id = ? ORDER BY u.is_admin DESC, u.last_name, u.email`, cid(c));
   const b = `${ctx.base}/admin/users`;
   const body = table([
-    { head: 'Name', cell: (u) => `${u.first_name || u.mf || ''} ${u.last_name || u.ml || ''}`.trim() || '—' },
+    { head: 'Name', cell: (u) => `${u.first_name || u.mf || ''} ${u.last_name || u.ml || ''}`.trim() || '-' },
     { head: 'Email', cell: (u) => u.email },
-    { head: 'Role', cell: (u) => u.is_admin ? html`<span class="badge badge-ok">admin${u.can_manage_admins ? ' · owner' : ''}</span>` : html`<span class="badge badge-muted">member</span>` },
+    { head: 'Role', cell: (u) => u.is_admin ? html`<span class="badge badge-ok">admin${u.can_manage_admins ? ', owner' : ''}</span>` : html`<span class="badge badge-muted">member</span>` },
     { head: 'Status', cell: (u) => badge(u.is_active ? 'active' : 'inactive') },
-    { head: 'Last login', cell: (u) => u.last_login ? fmtWhen(u.last_login) : '—' },
-    { head: '', cell: (u) => u.can_manage_admins ? html`<span class="muted small">—</span>` : html`<div class="wrap-gap">
+    { head: 'Last login', cell: (u) => u.last_login ? fmtWhen(u.last_login) : '-' },
+    { head: '', cell: (u) => u.can_manage_admins ? html`<span class="muted small">-</span>` : html`<div class="wrap-gap">
         ${u.is_admin
           ? html`<form method="post" action="${b}/${u.id}/revoke"><button class="btn btn-ghost btn-sm">Revoke admin</button></form>`
           : html`<form method="post" action="${b}/${u.id}/promote"><button class="btn btn-ghost btn-sm">Make admin</button></form>`}
@@ -625,7 +625,7 @@ admin.get('/audit', async (c) => {
     { head: 'When', cell: (r) => fmtDateTime(r.created_at) },
     { head: 'Who', cell: (r) => [r.first_name, r.last_name].filter(Boolean).join(' ') || r.email || 'system' },
     { head: 'Action', cell: (r) => r.action },
-    { head: 'Entity', cell: (r) => [r.entity_type, r.entity_id].filter(Boolean).join(' #') || '—' },
+    { head: 'Entity', cell: (r) => [r.entity_type, r.entity_id].filter(Boolean).join(' #') || '-' },
     { head: 'Details', cell: (r) => html`<span class="small muted">${r.details || ''}</span>` },
   ], rows, 'No activity logged yet.');
   return c.html(adminShell(ctx, '/audit', 'Audit log', body));
@@ -639,12 +639,12 @@ admin.get('/emails', async (c) => {
   const body = table([
     { head: 'When', cell: (r) => fmtDateTime(r.sent_at || r.created_at) },
     { head: 'Type', cell: (r) => (r.email_type || '').replace('_', ' ') },
-    { head: 'To', cell: (r) => r.recipient_email || '—' },
+    { head: 'To', cell: (r) => r.recipient_email || '-' },
     { head: 'Subject', cell: (r) => html`<span class="small">${r.subject || ''}</span>` },
     { head: 'Status', cell: (r) => emailStatus(r.status) },
   ], rows, 'No emails sent yet.');
   return c.html(adminShell(ctx, '/settings', 'Email log', html`
-    <p class="small"><a href="${ctx.base}/admin/settings/email">← Email settings</a></p>${body}`));
+    <p class="small"><a href="${ctx.base}/admin/settings/email">Back to email settings</a></p>${body}`));
 });
 
 // --- Data export (owner only) ----------------------------------------------
@@ -694,7 +694,7 @@ function emailStatus(status) {
 const METHOD_LABEL = (m) => ({ cash: 'Cash', check: 'Check', zelle: 'Zelle', bank_transfer: 'Bank transfer', zeffy: 'Zeffy', stripe: 'Stripe', paypal: 'PayPal', other: 'Other' }[m] || m);
 
 function pctChange(prev, cur) {
-  if (!prev) return cur ? 'New' : '—';
+  if (!prev) return cur ? 'New' : '-';
   const p = Math.round(((cur - prev) / prev) * 100);
   return `${p >= 0 ? '+' : ''}${p}%`;
 }
@@ -710,7 +710,7 @@ function barChart(values, currency) {
         const x = pad + i * bw + 3;
         const yTop = H - pad - h;
         return `<rect x="${x}" y="${yTop}" width="${bw - 6}" height="${h}" rx="2" fill="var(--brand)" opacity="0.9"><title>${labels[i]}: ${formatMoney(v, currency)}</title></rect>
-          <text x="${x + (bw - 6) / 2}" y="${H - 8}" font-size="9" fill="#6d675e" text-anchor="middle">${labels[i]}</text>`;
+          <text x="${x + (bw - 6) / 2}" y="${H - 8}" font-size="9" style="fill:var(--muted)" text-anchor="middle">${labels[i]}</text>`;
       }).join(''))}
     </svg></div>`;
 }
@@ -721,7 +721,7 @@ function breakdown(pairs, currency) {
   return html`<div class="stack">${pairs.map(([name, v]) => html`
     <div>
       <div class="between" style="margin-bottom:2px"><span class="small">${name}</span><span class="small muted">${formatMoney(v, currency)}</span></div>
-      <div style="height:6px;background:#eee7db;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.round((v / total) * 100)}%;background:var(--brand)"></div></div>
+      <div class="meter"><div style="width:${Math.round((v / total) * 100)}%"></div></div>
     </div>`)}</div>`;
 }
 
@@ -780,12 +780,12 @@ function memberForm(ctx, { values = {}, families = [], action, submitLabel, isNe
       </div>
       <label class="field"><span class="label">Family</span>
         <select class="input" name="family_id">
-          <option value="">— none —</option>
+          <option value="">None</option>
           ${families.map((f) => html`<option value="${f.id}" ${raw(String(f.id) === String(v.family_id) ? 'selected' : '')}>${f.family_name}</option>`)}
         </select></label>
       <label class="field"><span class="label">Family role</span>
         <select class="input" name="family_role">
-          <option value="">—</option>
+          <option value="">Not set</option>
           ${ROLES.map((r) => html`<option value="${r}" ${raw(r === v.family_role ? 'selected' : '')}>${cap(r)}</option>`)}
         </select></label>
       <label class="field"><span class="label">Notes (admin only)</span>

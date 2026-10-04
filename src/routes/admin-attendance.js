@@ -38,9 +38,9 @@ adminAttendance.get('/', async (c) => {
       </form>`)}
     <div class="mt-2">${table([
       { head: 'Date', cell: (r) => r.date },
-      { head: 'Service', cell: (r) => r.service_name || '—' },
+      { head: 'Service', cell: (r) => r.service_name || '-' },
       { head: 'Count', cell: (r) => r.count },
-      { head: 'Notes', cell: (r) => r.notes || '—' },
+      { head: 'Notes', cell: (r) => r.notes || '-' },
       { head: '', cell: (r) => html`<form method="post" action="${b}/${r.id}/delete" onsubmit="return confirm('Delete?')"><button class="btn btn-ghost btn-sm link-danger">Delete</button></form>` },
     ], rows, 'No attendance recorded yet.')}</div>`;
   return c.html(adminShell(ctx, '/attendance', 'Attendance', body));
@@ -76,7 +76,7 @@ function chart(items) {
         const h = Math.round((x.count / max) * (H - pad * 2));
         const xx = pad + i * bw + 3;
         return `<rect x="${xx}" y="${H - pad - h}" width="${bw - 6}" height="${h}" rx="2" fill="var(--brand)" opacity="0.9"><title>${x.date}: ${x.count}</title></rect>
-          <text x="${xx + (bw - 6) / 2}" y="${H - 8}" font-size="8" fill="#6d675e" text-anchor="middle">${x.date.slice(5)}</text>`;
+          <text x="${xx + (bw - 6) / 2}" y="${H - 8}" font-size="8" style="fill:var(--muted)" text-anchor="middle">${x.date.slice(5)}</text>`;
       }).join(''))}
     </svg></div>`;
 }

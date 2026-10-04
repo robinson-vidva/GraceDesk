@@ -16,15 +16,13 @@ export const platform = new Hono();
 function shell(title, admin, body) {
   return html`<!doctype html><html lang="en"><head>
     <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title} · GraceDesk Operations</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&display=swap" rel="stylesheet" />
+    <title>${title} - GraceDesk Operations</title>
     <link rel="stylesheet" href="/css/app.css" />
     <style>:root{--brand:#334e5c;--brand-ink:#22343d}</style>
   </head><body>
     <header class="site-header"><div class="container">
-      <a href="/platform" class="brandmark"><span class="mark">G</span><span>GraceDesk Operations</span></a>
-      <nav class="nav">${admin ? html`<span class="muted small">${admin.email}</span><a href="/platform/logout">Sign out</a>` : ''}</nav>
+      <a href="/platform" class="brandmark"><img src="/icons/icon.svg" alt="" /><span>GraceDesk Operations</span></a>
+      <nav class="nav">${admin ? html`<span class="muted small">${admin.email}</span><a href="/platform/logout">Log out</a>` : ''}</nav>
     </div></header>
     <main class="main"><div class="container">${body}</div></main>
   </body></html>`;
@@ -40,11 +38,11 @@ async function currentAdmin(c) {
 
 platform.get('/login', async (c) => {
   if (await currentAdmin(c)) return c.redirect('/platform');
-  return c.html(shell('Sign in', null, authCard('Operator sign in', html`
+  return c.html(shell('Log in', null, authCard('Operator log in', html`
     <form method="post" action="/platform/login">
       ${field({ label: 'Email', name: 'email', type: 'email', required: true })}
       ${field({ label: 'Password', name: 'password', type: 'password', required: true })}
-      ${submitBtn('Sign in')}
+      ${submitBtn('Log in')}
     </form>`)));
 });
 
@@ -53,12 +51,12 @@ platform.post('/login', async (c) => {
   const admin = await getPlatformAdminByEmail(c.env.DB, (form.email || '').toString());
   const ok = admin?.password_hash && await verifyPassword((form.password || '').toString(), admin.password_hash);
   if (!ok) {
-    return c.html(shell('Sign in', null, authCard('Operator sign in', html`
+    return c.html(shell('Log in', null, authCard('Operator log in', html`
       ${alertBox('error', 'Incorrect email or password.')}
       <form method="post" action="/platform/login">
         ${field({ label: 'Email', name: 'email', type: 'email', value: (form.email || '').toString(), required: true })}
         ${field({ label: 'Password', name: 'password', type: 'password', required: true })}
-        ${submitBtn('Sign in')}
+        ${submitBtn('Log in')}
       </form>`)));
   }
   await createPlatformSession(c, admin.id);
@@ -101,14 +99,14 @@ platform.get('/', async (c) => {
         <input class="input" type="search" name="q" value="${q}" placeholder="Search churches" />
         <button class="btn btn-ghost btn-sm">Search</button>
       </form></div>
-    <p class="muted small mb-2">${churches.length} church(es) · ${active} active</p>
+    <p class="muted small mb-2">${churches.length} church(es), ${active} active</p>
     ${table([
       { head: 'Church', cell: (x) => html`<a href="/platform/churches/${x.id}">${x.name}</a>` },
       { head: 'Slug', cell: (x) => html`<a href="/c/${x.slug}" target="_blank">/c/${x.slug}</a>` },
       { head: 'Members', cell: (x) => x.members },
       { head: 'Gifts', cell: (x) => x.gifts },
       { head: 'Status', cell: (x) => badge(x.status === 'active' ? 'active' : 'inactive') },
-      { head: 'Domain', cell: (x) => x.custom_domain || html`<span class="muted">—</span>` },
+      { head: 'Domain', cell: (x) => x.custom_domain || html`<span class="muted">-</span>` },
     ], churches, 'No churches yet.')}`;
   return c.html(shell('Churches', admin, body));
 });
@@ -123,7 +121,7 @@ platform.get('/churches/:id', async (c) => {
   const stats = await getChurchStats(c.env.DB, id);
   const suspended = church.status === 'suspended';
   const body = html`
-    <p class="small"><a href="/platform">← All churches</a></p>
+    <p class="small"><a href="/platform">Back to all churches</a></p>
     <div class="between mb-2"><h1 class="page-title" style="margin:0">${church.name}</h1>${badge(suspended ? 'inactive' : 'active')}</div>
     <div class="tiles mb-2">
       ${statTile('Members', stats.members)}

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { html } from 'hono/html';
-import { layout, card } from '../views/layout.js';
+import { layout } from '../views/layout.js';
 import { field, submitBtn, authCard, alertBox } from '../views/forms.js';
 import { all, one } from '../db.js';
 import { createChurchWithAdmin, uniqueSlug } from '../services/churches.js';
@@ -16,24 +16,32 @@ const validEmail = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e || '');
 marketing.get('/', (c) => {
   const body = html`
     <section class="hero">
-      <h1>Church giving records,<br/>without the monthly bill.</h1>
-      <p>A free member portal and giving tracker for churches. Record contributions,
-         send thank-you notes, and give members their year-end tax statements, all in one place.</p>
+      <h1>Giving records for your church</h1>
+      <p>GraceDesk is a free tool for keeping track of what members give and sharing
+         those records with them. It does not collect or handle money.</p>
       <div class="actions">
-        <a href="/signup" class="btn btn-primary">Start your church</a>
+        <a href="/signup" class="btn btn-primary">Set up your church</a>
         <a href="/find" class="btn btn-ghost">Find your church</a>
       </div>
     </section>
 
-    <div class="grid grid-3 mt-2">
-      ${feat('Tax-ready statements', 'Members download their own monthly and annual giving statements as PDF, ready for filing.')}
-      ${feat('Automatic thank-yous', 'Every recorded gift sends a branded thank-you note with a scripture verse.')}
-      ${feat('Families and directory', 'Group households, approve new members, and keep your directory current.')}
-      ${feat('Private by design', 'Each church sees only its own data, and no money ever passes through the system.')}
-      ${feat('Your branding', 'Your church name, logo, and colors. Members see you, not us.')}
-      ${feat('Made for phones', 'Built to work well on a phone, so members can check their giving anywhere.')}
-    </div>`;
-  return c.html(layout({ ...G, title: 'Free church giving records' }, body));
+    <h2 class="mt-3">What a church can do</h2>
+    <ul class="plain-list">
+      <li>Record gifts made by cash, check, Zelle, bank transfer or online.</li>
+      <li>Send a thank-you email with a Bible verse when a gift is recorded.</li>
+      <li>Approve new members and keep member and family details up to date.</li>
+      <li>Show the church's own name, logo and color.</li>
+    </ul>
+
+    <h2 class="mt-3">What a member can do</h2>
+    <ul class="plain-list">
+      <li>See their own giving history.</li>
+      <li>Download monthly and yearly giving statements as PDF for tax filing.</li>
+      <li>Update their contact details.</li>
+    </ul>
+
+    <p class="muted mt-3">Each church sees only its own records. GraceDesk is open source and free to use.</p>`;
+  return c.html(layout({ ...G, title: 'Giving records for your church' }, body));
 });
 
 // --- Find your church ------------------------------------------------------
@@ -98,7 +106,7 @@ function findPage({ q = '', matches, error } = {}) {
   const inner = html`
     <form method="post" action="/find">
       ${error ? alertBox('error', error) : ''}
-      ${field({ label: 'Church name', name: 'q', value: q, required: true, placeholder: 'e.g. First Baptist' })}
+      ${field({ label: 'Church name', name: 'q', value: q, required: true, placeholder: 'For example, First Baptist' })}
       ${submitBtn('Find')}
     </form>
     ${matches
@@ -107,7 +115,7 @@ function findPage({ q = '', matches, error } = {}) {
             ${matches.map((m, i) => html`<a href="/c/${m.slug}/login" style="display:flex;justify-content:space-between;padding:0.8rem 1rem;${i ? 'border-top:1px solid var(--line)' : ''}">
               <span>${m.name}</span><span class="small">Open</span></a>`)}
           </div>`
-        : html`<p class="muted small mt-2">No churches found. Ask your administrator for the link, or <a href="/signup">start a new church</a>.</p>`)
+        : html`<p class="muted small mt-2">No churches found. Ask your administrator for the link, or <a href="/signup">set up a new church</a>.</p>`)
       : ''}`;
   return layout({ ...G, title: 'Find your church' }, authCard('Find your church', inner,
     'Enter your church name to reach its portal.'));
@@ -127,13 +135,10 @@ function signupPage({ error, values = {} } = {}) {
       ${field({ label: 'Email', name: 'email', type: 'email', value: values.email || '', required: true, autocomplete: 'email' })}
       ${field({ label: 'Password', name: 'password', type: 'password', required: true, autocomplete: 'new-password', hint: 'At least 8 characters' })}
       ${field({ label: 'Confirm password', name: 'password2', type: 'password', required: true, autocomplete: 'new-password' })}
-      ${submitBtn('Create church')}
+      ${submitBtn('Set up church')}
     </form>
     <p class="muted small center mt-1">Already have a church? <a href="/find">Find it</a></p>`;
-  return layout({ ...G, title: 'Start your church' }, authCard('Start your church', inner,
-    'Free to use. You become the first administrator.'));
+  return layout({ ...G, title: 'Set up your church' }, authCard('Set up your church', inner,
+    'Free to use. You will be the first administrator.'));
 }
 
-function feat(title, text) {
-  return card(html`<div class="feature"><h3>${title}</h3><p>${text}</p></div>`);
-}

@@ -30,7 +30,7 @@ export function adminShell(ctx, active, title, body) {
       ${title ? html`<h1 class="page-title">${title}</h1>` : ''}
       ${body}
     </div>`;
-  return layout({ ...ctx, title: title ? `${title} · Admin` : 'Admin' }, inner);
+  return layout({ ...ctx, title: title ? `${title} - Admin` : 'Admin' }, inner);
 }
 
 export function badge(status) {

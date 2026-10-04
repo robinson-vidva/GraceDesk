@@ -59,14 +59,14 @@ adminContributions.get('/', async (c) => {
         <a href="${b}/batch" class="btn btn-ghost btn-sm">Batch entry</a>
         <a href="${b}/new" class="btn btn-primary btn-sm">Record</a>
       </div>`)}
-    <p class="muted small mb-2">${rows.length} contribution(s) · total ${formatMoney(total, cur)}</p>
+    <p class="muted small mb-2">${rows.length} contribution(s), total ${formatMoney(total, cur)}</p>
     ${table([
       { head: 'Date', cell: (r) => r.date },
       { head: 'Member', cell: (r) => html`<a href="${ctx.base}/admin/contributions/${r.id}">${[r.first_name, r.last_name].filter(Boolean).join(' ')}</a>` },
       { head: 'Amount', cell: (r) => formatMoney(r.amount, r.currency || cur) },
       { head: 'Method', cell: (r) => METHOD_LABELS[r.method] || r.method },
-      { head: 'Category', cell: (r) => r.category || '—' },
-      { head: 'Receipt', cell: (r) => r.receipt_number || '—' },
+      { head: 'Category', cell: (r) => r.category || '-' },
+      { head: 'Receipt', cell: (r) => r.receipt_number || '-' },
     ], rows, 'No contributions recorded yet.')}`;
   return c.html(adminShell(ctx, '/contributions', 'Contributions', body));
 });
@@ -119,11 +119,11 @@ adminContributions.post('/new', async (c) => {
   const body = card(html`
     <h2 style="font-size:1.15rem">Confirm this contribution</h2>
     <dl class="detail mt-1">
-      <dt>Member</dt><dd>${member ? fullName(member) : '—'}</dd>
+      <dt>Member</dt><dd>${member ? fullName(member) : '-'}</dd>
       <dt>Amount</dt><dd>${formatMoney(d.amount, ctx.settings.currency)}</dd>
       <dt>Date</dt><dd>${d.date}</dd>
       <dt>Method</dt><dd>${METHOD_LABELS[d.method]}</dd>
-      <dt>Category</dt><dd>${cat ? cat.name : '—'}</dd>
+      <dt>Category</dt><dd>${cat ? cat.name : '-'}</dd>
       ${d.notes ? html`<dt>Notes</dt><dd>${d.notes}</dd>` : ''}
     </dl>
     <form method="post" action="${b}" class="wrap-gap mt-2">
@@ -162,7 +162,7 @@ adminContributions.post('/', async (c) => {
           <tr><td style="color:#64748b;padding:2px 12px 2px 0">Date</td><td>${d.date}</td></tr>
           <tr><td style="color:#64748b;padding:2px 12px 2px 0">Receipt</td><td>${receipt}</td></tr>
         </table>
-        ${verse ? `<blockquote style="border-left:3px solid ${ctx.settings.primary_color};margin:16px 0;padding:4px 0 4px 14px;color:#334155;font-style:italic">"${verse.text}"<br/><span style="font-style:normal;color:#64748b">— ${verse.reference}</span></blockquote>` : ''}`),
+        ${verse ? `<blockquote style="border-left:3px solid ${ctx.settings.primary_color};margin:16px 0;padding:4px 0 4px 14px;color:#334155;font-style:italic">"${verse.text}"<br/><span style="font-style:normal;color:#64748b">${verse.reference}</span></blockquote>` : ''}`),
     });
     emailNote = res.ok ? 'A thank-you email was sent.' : 'Email is not configured, so no thank-you was sent.';
   }
@@ -186,7 +186,7 @@ adminContributions.get('/batch', async (c) => {
   const members = await activeMembers(c.env.DB, cid(c));
   const cats = await activeCategories(c.env.DB, cid(c));
   const b = `${ctx.base}/admin/contributions`;
-  const memberOptions = html`<option value="">—</option>${members.map((m) => html`<option value="${m.id}">${m.last_name}, ${m.first_name}</option>`)}`;
+  const memberOptions = html`<option value="">Choose a member</option>${members.map((m) => html`<option value="${m.id}">${m.last_name}, ${m.first_name}</option>`)}`;
   const blankRow = html`<tr class="batch-row">
     <td><select class="input" name="member_id">${memberOptions}</select></td>
     <td><input class="input" type="number" step="0.01" min="0" name="amount" placeholder="0.00" style="max-width:9rem" /></td></tr>`;
@@ -202,7 +202,7 @@ adminContributions.get('/batch', async (c) => {
             <select class="input" name="method">${METHODS.map((m) => html`<option value="${m}">${METHOD_LABELS[m]}</option>`)}</select></label>
         </div>
         <label class="field"><span class="label">Category (applies to all)</span>
-          <select class="input" name="category_id"><option value="">—</option>
+          <select class="input" name="category_id"><option value="">No category</option>
             ${cats.map((cat) => html`<option value="${cat.id}">${cat.name}</option>`)}</select></label>
         <label class="flex small" style="margin:0.3rem 0"><input type="checkbox" name="send_emails" checked /> Send a thank-you email for each gift</label>`)}
       <div class="table-wrap mt-2">
@@ -256,8 +256,8 @@ adminContributions.post('/batch', async (c) => {
         subject: (ctx.settings.thankyou_subject_template || 'Thank you').replace('{church_name}', ctx.settings.church_name),
         html: emailShell(ctx.settings, `<p>Dear ${m.first_name},</p>
           <p>${ctx.settings.thankyou_intro_text || 'Thank you for your generous contribution.'}</p>
-          <p style="font-size:14px"><strong>${formatMoney(amount, ctx.settings.currency)}</strong> · ${date} · Receipt ${receipt}</p>
-          ${verse ? `<blockquote style="border-left:3px solid ${ctx.settings.primary_color};margin:16px 0;padding:4px 0 4px 14px;color:#334155;font-style:italic">"${verse.text}"<br/><span style="font-style:normal;color:#64748b">— ${verse.reference}</span></blockquote>` : ''}`),
+          <p style="font-size:14px"><strong>${formatMoney(amount, ctx.settings.currency)}</strong>, ${date}, receipt ${receipt}</p>
+          ${verse ? `<blockquote style="border-left:3px solid ${ctx.settings.primary_color};margin:16px 0;padding:4px 0 4px 14px;color:#334155;font-style:italic">"${verse.text}"<br/><span style="font-style:normal;color:#64748b">${verse.reference}</span></blockquote>` : ''}`),
       }));
     }
   }
@@ -283,7 +283,7 @@ adminContributions.get('/import', (c) => {
     <p class="muted small">Include a header row. Columns: <code>email</code> or <code>name</code> to match the member, plus <code>amount, date, method, category</code>. Dates as YYYY-MM-DD. No emails are sent for imported gifts.</p>
     <form method="post" action="${ctx.base}/admin/contributions/import" enctype="multipart/form-data" class="mt-1">
       <input class="input" type="file" name="file" accept=".csv,text/csv" />
-      <p class="muted small mt-1">…or paste CSV:</p>
+      <p class="muted small mt-1">Or paste CSV:</p>
       <textarea class="input" name="csv" rows="6" placeholder="email,amount,date,method,category&#10;jane@example.com,100,2025-12-25,check,Monthly Tithe"></textarea>
       ${submitBtn('Import')}
     </form>`);
@@ -358,8 +358,8 @@ adminContributions.get('/:id', async (c) => {
       <dt>Amount</dt><dd>${formatMoney(ct.amount, ct.currency || ctx.settings.currency)}</dd>
       <dt>Date</dt><dd>${ct.date}</dd>
       <dt>Method</dt><dd>${METHOD_LABELS[ct.method] || ct.method}</dd>
-      <dt>Category</dt><dd>${ct.category || '—'}</dd>
-      <dt>Receipt</dt><dd>${ct.receipt_number || '—'}</dd>
+      <dt>Category</dt><dd>${ct.category || '-'}</dd>
+      <dt>Receipt</dt><dd>${ct.receipt_number || '-'}</dd>
       ${ct.notes ? html`<dt>Notes</dt><dd>${ct.notes}</dd>` : ''}
       ${ct.is_deleted ? html`<dt>Deleted</dt><dd>${ct.deleted_reason || ''}</dd>` : ''}
     </dl>`)}
@@ -440,7 +440,7 @@ function contributionForm(ctx, { members, cats, values = {}, action, submitLabel
       ${error ? alertBox('error', error) : ''}
       <label class="field"><span class="label">Member <span class="req">*</span></span>
         <select class="input" name="member_id" required>
-          <option value="">Choose a member…</option>
+          <option value="">Choose a member</option>
           ${members.map((m) => html`<option value="${m.id}" ${raw(String(m.id) === String(v.member_id) ? 'selected' : '')}>${m.last_name}, ${m.first_name}</option>`)}
         </select>
         <span class="hint"><a href="${ctx.base}/admin/members/new" target="_blank">Add a new member</a> if they are not listed.</span>
@@ -457,7 +457,7 @@ function contributionForm(ctx, { members, cats, values = {}, action, submitLabel
           </select></label>
         <label class="field"><span class="label">Category</span>
           <select class="input" name="category_id">
-            <option value="">—</option>
+            <option value="">No category</option>
             ${cats.map((cat) => html`<option value="${cat.id}" ${raw(String(cat.id) === String(v.category_id) ? 'selected' : '')}>${cat.name}</option>`)}
           </select></label>
       </div>

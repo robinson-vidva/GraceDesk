@@ -23,12 +23,12 @@ function composeView(ctx, { subject = '', message = '', error, count, enabled })
   return card(html`
     <h2 style="font-size:1.15rem">Email your members</h2>
     <p class="muted small">Sends to all active members who have an email address (${count} right now).</p>
-    ${!enabled ? alertBox('info', 'Email is not configured yet. Add a Resend API key in Settings → Email before sending.') : ''}
+    ${!enabled ? alertBox('info', 'Email is not configured yet. Add a Resend API key in Settings, under Email, before sending.') : ''}
     <form method="post" action="${b}/preview">
       ${error ? alertBox('error', error) : ''}
       ${field({ label: 'Subject', name: 'subject', value: subject, required: true })}
       <label class="field"><span class="label">Message</span>
-        <textarea class="input" name="message" rows="8" required placeholder="Write your announcement…">${message}</textarea>
+        <textarea class="input" name="message" rows="8" required placeholder="Write your announcement">${message}</textarea>
         <span class="hint">Plain text. Line breaks are preserved. Your church name and contact details are added automatically.</span></label>
       ${submitBtn('Preview')}
     </form>`);
@@ -52,7 +52,7 @@ adminBroadcast.post('/preview', async (c) => {
   const b = `${ctx.base}/admin/broadcast`;
   const bodyHtml = emailShell(ctx.settings, `<p>${escapeHtml(message).replace(/\n/g, '<br/>')}</p>`);
   const body = html`
-    ${card(html`<div class="label muted small mb-2">Preview — this will be sent to ${count} member(s)</div>
+    ${card(html`<div class="label muted small mb-2">Preview. This will be sent to ${count} member(s).</div>
       <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">${raw(bodyHtml)}</div>`)}
     <form method="post" action="${b}/send" class="wrap-gap mt-2">
       <input type="hidden" name="subject" value="${escapeAttr(subject)}" />

@@ -27,7 +27,7 @@ adminGroups.get('/', async (c) => {
       <button class="btn btn-primary btn-sm">Create group</button></form>`)}
     <div class="mt-2">${table([
       { head: 'Group', cell: (g) => html`<a href="${b}/${g.id}">${g.name}</a>` },
-      { head: 'Description', cell: (g) => g.description || '—' },
+      { head: 'Description', cell: (g) => g.description || '-' },
       { head: 'Members', cell: (g) => g.members },
     ], groups, 'No groups yet.')}</div>`;
   return c.html(adminShell(ctx, '/groups', 'Groups', body));
@@ -57,7 +57,7 @@ adminGroups.get('/:id', async (c) => {
   const sent = c.req.query('sent');
 
   const body = html`
-    <p class="small"><a href="${b}">← All groups</a></p>
+    <p class="small"><a href="${b}">Back to all groups</a></p>
     <div class="between mb-2"><h1 class="page-title" style="margin:0">${g.name}</h1></div>
     ${g.description ? html`<p class="muted small">${g.description}</p>` : ''}
     <div class="grid grid-2">
@@ -67,12 +67,12 @@ adminGroups.get('/:id', async (c) => {
             <form method="post" action="${b}/${id}/remove"><input type="hidden" name="member_id" value="${m.id}" /><button class="btn btn-ghost btn-sm link-danger">Remove</button></form></div>`)}</div>`
           : empty('No members yet.')}
         <form method="post" action="${b}/${id}/add" class="toolbar mt-2" style="margin:0">
-          <select class="input" name="member_id" required><option value="">Add a member…</option>
+          <select class="input" name="member_id" required><option value="">Add a member</option>
             ${others.map((m) => html`<option value="${m.id}">${m.last_name}, ${m.first_name}</option>`)}</select>
           <button class="btn btn-primary btn-sm">Add</button></form>`)}
       ${card(html`<div class="label muted small mb-2">Email this group</div>
         ${sent ? alertBox('success', `Message sent to ${sent} member(s).`) : ''}
-        ${!emailEnabled(ctx.settings, c.env) ? alertBox('info', 'Configure email in Settings → Email to send.') : ''}
+        ${!emailEnabled(ctx.settings, c.env) ? alertBox('info', 'Configure email in Settings, under Email, to send.') : ''}
         <p class="muted small">${withEmail} of ${members.length} members have an email.</p>
         <form method="post" action="${b}/${id}/email">
           ${field({ label: 'Subject', name: 'subject', required: true })}

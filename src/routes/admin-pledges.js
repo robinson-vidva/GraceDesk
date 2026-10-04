@@ -38,12 +38,12 @@ adminPledges.get('/', async (c) => {
     <div class="tiles mb-2">
       ${tile('Total pledged', formatMoney(totalPledged, cur))}
       ${tile('Received so far', formatMoney(totalReceived, cur))}
-      ${tile('Progress', totalPledged ? Math.round((totalReceived / totalPledged) * 100) + '%' : '—')}
+      ${tile('Progress', totalPledged ? Math.round((totalReceived / totalPledged) * 100) + '%' : '-')}
     </div>
     ${card(html`<div class="label muted small mb-2">Add or update a pledge for ${year}</div>
       <form method="post" action="${b}" class="toolbar" style="margin:0;flex-wrap:wrap">
         <input type="hidden" name="year" value="${year}" />
-        <select class="input" name="member_id" required><option value="">Choose a member…</option>
+        <select class="input" name="member_id" required><option value="">Choose a member</option>
           ${members.map((m) => html`<option value="${m.id}">${m.last_name}, ${m.first_name}</option>`)}</select>
         <input class="input" type="number" step="0.01" min="0" name="amount" placeholder="Amount" required style="max-width:9rem" />
         <button class="btn btn-primary btn-sm">Save pledge</button>
@@ -85,5 +85,5 @@ function tile(label, value) {
 }
 function progressBar(received, pledged) {
   const pct = pledged ? Math.min(100, Math.round((received / pledged) * 100)) : 0;
-  return html`<div style="min-width:120px"><div style="height:8px;background:#eee7db;border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--brand)"></div></div><span class="small muted">${pct}%</span></div>`;
+  return html`<div style="min-width:120px"><div class="meter"><div style="width:${pct}%"></div></div><span class="small muted">${pct}%</span></div>`;
 }

@@ -42,7 +42,7 @@ export async function buildStatement(settings, member, rows, { type, year, month
   y -= 12;
   const title = type === 'annual'
     ? `${year} Annual Giving Statement`
-    : `Giving Statement — ${MONTHS[month]} ${year}`;
+    : `Giving Statement, ${MONTHS[month]} ${year}`;
   text(title, M, y, { size: 13, f: bold });
   y -= 22;
 
@@ -74,8 +74,8 @@ export async function buildStatement(settings, member, rows, { type, year, month
     text(r.date, cols[0], y, { size: 9 });
     text(formatMoney(r.amount, cur), cols[1], y, { size: 9 });
     text((r.method || '').replace('_', ' '), cols[2], y, { size: 9 });
-    text(r.category || '—', cols[3], y, { size: 9 });
-    text(r.receipt_number || '—', cols[4], y, { size: 9 });
+    text(r.category || '-', cols[3], y, { size: 9 });
+    text(r.receipt_number || '-', cols[4], y, { size: 9 });
     y -= 14;
   }
 

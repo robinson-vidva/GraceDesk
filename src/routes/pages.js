@@ -12,22 +12,23 @@ pages.get('/', (c) => {
   if (ctx.user) return c.redirect(`${b}/dashboard`);
 
   const body = html`
-    <div class="narrow center" style="padding:2.5rem 0 1rem">
-      <h1 style="font-size:2rem">${s.church_name || 'Welcome'}</h1>
-      <p class="muted">Member portal and giving records</p>
-      <div class="actions" style="display:flex;gap:0.7rem;justify-content:center;margin:1.6rem 0 0.5rem">
-        <a href="${b}/login" class="btn btn-primary">Sign in</a>
+    <section class="hero">
+      <h1>${s.church_name || 'Welcome'}</h1>
+      <p>Member portal and giving records.</p>
+      <div class="actions">
+        <a href="${b}/login" class="btn btn-primary">Log in</a>
         <a href="${b}/register" class="btn btn-ghost">Register</a>
       </div>
-      <p class="small"><a href="${b}/forgot-password">Forgot your password?</a></p>
-    </div>
+      <p class="mt-2"><a href="${b}/forgot-password">Forgot your password?</a></p>
+    </section>
 
-    <div class="grid grid-2 mt-2">
-      ${feature('Your giving history', 'See every contribution you have made, any time you need it.')}
-      ${feature('Tax statements', 'Download your monthly and annual giving statements as PDF.')}
-      ${feature('Family view', 'Heads of household can see the whole family in one place.')}
-      ${feature('A note of thanks', 'Receive a thank-you for every gift you give.')}
-    </div>`;
+    <h2 class="mt-3">After you log in you can</h2>
+    <ul class="plain-list">
+      <li>See the gifts the church has recorded for you.</li>
+      <li>Download monthly and yearly giving statements as PDF.</li>
+      <li>See your family's giving, if you are the head of the household.</li>
+      <li>Update your contact details.</li>
+    </ul>`;
 
   return c.html(layout({ ...ctx, title: 'Home' }, body));
 });
@@ -36,7 +37,7 @@ pages.get('/terms', (c) => {
   const ctx = c.get('ctx');
   const name = ctx.settings?.church_name || 'the church';
   const body = card(html`
-    <h1 style="font-size:1.5rem">Terms and Privacy</h1>
+    <h1>Terms and privacy</h1>
     <p>This portal is operated by ${name} to keep giving records and to communicate with members.</p>
     <p><strong>No financial transactions.</strong> This system does not collect, process, or hold any money. All giving happens elsewhere. We only record what was given.</p>
     <p><strong>Personal data.</strong> We store the contact and giving information you and ${name} provide, only to maintain church records and produce giving statements. We do not sell your data.</p>
@@ -47,11 +48,8 @@ pages.get('/terms', (c) => {
 pages.get('/suspended', (c) => {
   const ctx = c.get('ctx');
   const body = card(html`
-    <h1 style="font-size:1.3rem">This account is paused</h1>
-    <p class="muted small">Please contact your church administrator.</p>`);
+    <h1>This church's account is paused</h1>
+    <p>Please contact your church administrator.</p>`);
   return c.html(layout({ ...ctx, title: 'Paused', user: null }, body));
 });
 
-function feature(title, text) {
-  return card(html`<div class="feature"><h3>${title}</h3><p>${text}</p></div>`);
-}

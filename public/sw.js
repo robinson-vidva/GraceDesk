@@ -1,6 +1,6 @@
 // GraceDesk service worker: cache the static shell so the app is installable
 // and static assets load offline. Dynamic (tenant/auth) pages are never cached.
-const CACHE = 'gracedesk-v1';
+const CACHE = 'gracedesk-v2';
 const ASSETS = ['/css/app.css', '/icons/icon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
@@ -18,6 +18,15 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin === location.origin && ASSETS.includes(url.pathname)) {
-    e.respondWith(caches.match(req).then((r) => r || fetch(req)));
+    // Network first, so a new stylesheet shows straight away; the cached copy
+    // is only used when the network is unavailable.
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+          return res;
+        })
+        .catch(() => caches.match(req)),
+    );
   }
 });

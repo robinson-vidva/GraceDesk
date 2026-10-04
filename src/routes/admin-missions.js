@@ -51,8 +51,8 @@ adminMissions.get('/', async (c) => {
     ${table([
       { head: 'Site', cell: (s) => html`<a href="${b}/${s.id}">${s.name}</a>` },
       { head: 'Type', cell: (s) => cap(s.type) },
-      { head: 'Country', cell: (s) => s.country || '—' },
-      { head: 'People', cell: (s) => s.type === 'school' ? `${s.teachers_count} teachers · ${s.students_count} students` : `${s.pastors_count} pastors` },
+      { head: 'Country', cell: (s) => s.country || '-' },
+      { head: 'People', cell: (s) => s.type === 'school' ? `${s.teachers_count} teachers, ${s.students_count} students` : `${s.pastors_count} pastors` },
       { head: 'Support', cell: (s) => formatMoney(s.support_total, cur) },
       { head: 'Status', cell: (s) => badge(s.is_active ? 'active' : 'inactive') },
     ], sites, 'No mission sites yet. Add the first one.')}`;
@@ -126,7 +126,7 @@ adminMissions.get('/:id', async (c) => {
     <div class="grid grid-2">
       ${card(html`<dl class="detail">
         <dt>Name</dt><dd>${s.name}</dd>
-        <dt>Country</dt><dd>${s.country || '—'}</dd>
+        <dt>Country</dt><dd>${s.country || '-'}</dd>
         ${people}
         <dt>Total sent</dt><dd><strong>${formatMoney(total, cur)}</strong></dd>
       </dl>${s.notes ? html`<p class="small muted mt-2">${s.notes}</p>` : ''}`)}
@@ -147,7 +147,7 @@ adminMissions.get('/:id', async (c) => {
       { head: 'Date', cell: (r) => r.date },
       { head: 'Amount', cell: (r) => formatMoney(r.amount, r.currency || cur) },
       { head: 'Method', cell: (r) => SUPPORT_METHOD_LABELS[r.method] || r.method },
-      { head: 'Notes', cell: (r) => r.notes || '—' },
+      { head: 'Notes', cell: (r) => r.notes || '-' },
       { head: '', cell: (r) => html`<form method="post" action="${b}/support/${r.id}/delete" onsubmit="return confirm('Delete this support record?')"><button class="btn btn-ghost btn-sm link-danger">Delete</button></form>` },
     ], support, 'No support recorded for this site yet.')}</div>`;
   return c.html(adminShell(ctx, '/missions', s.name, body));

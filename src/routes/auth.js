@@ -204,7 +204,7 @@ auth.post('/forgot-password', async (c) => {
       <p style="margin:20px 0"><a href="${link}" style="background:${ctx.settings?.primary_color || '#1f5a6b'};color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Reset password</a></p>
       <p style="font-size:12px;color:#64748b">If you didn't request this, you can safely ignore this email.</p>`);
     await sendEmail(c.env, ctx.settings, {
-      to: email, subject: `Reset your password — ${ctx.settings?.church_name || 'GraceDesk'}`,
+      to: email, subject: `Reset your password for ${ctx.settings?.church_name || 'GraceDesk'}`,
       html, type: 'password_reset', memberId: user.member_id,
     });
     if (!emailEnabled(ctx.settings, c.env)) devLink = link;

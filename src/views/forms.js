@@ -21,8 +21,8 @@ export function authCard(title, inner, subtitle = '') {
   return html`
     <div class="narrow mt-1">
       <div class="card">
-        <h1 style="font-size:1.4rem">${title}</h1>
-        ${subtitle ? html`<p class="muted small" style="margin-top:-0.3rem">${subtitle}</p>` : ''}
+        <h1>${title}</h1>
+        ${subtitle ? html`<p class="muted">${subtitle}</p>` : ''}
         <div class="mt-1">${inner}</div>
       </div>
     </div>`;

@@ -11,12 +11,9 @@ export function layout(ctx, body) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${ctx.title ? `${ctx.title} · ${churchName}` : churchName}</title>
+  <title>${ctx.title ? `${ctx.title} - ${churchName}` : churchName}</title>
   <link rel="icon" href="/icons/icon.svg" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/app.css" />
   <style>:root { --brand: ${raw(brand)}; --brand-ink: color-mix(in srgb, ${raw(brand)} 78%, #000); }</style>
   <script>try{var t=localStorage.getItem('gd-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
@@ -28,7 +25,7 @@ export function layout(ctx, body) {
   ${footer(ctx)}
   <script>
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(function(){}); }
-    function gdToggleTheme(){var el=document.documentElement;var next=el.getAttribute('data-theme')==='dark'?'light':'dark';el.setAttribute('data-theme',next);try{localStorage.setItem('gd-theme',next);}catch(e){}}
+    function gdToggleTheme(){var el=document.documentElement;var cur=el.getAttribute('data-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var next=cur==='dark'?'light':'dark';el.setAttribute('data-theme',next);try{localStorage.setItem('gd-theme',next);}catch(e){}}
   </script>
 </body>
 </html>`;
@@ -45,7 +42,9 @@ function header(ctx) {
       <a href="${home}" class="brandmark">
         ${s.church_logo_key
           ? html`<img src="${base}/logo" alt="" />`
-          : html`<span class="mark">${initial(s.church_name)}</span>`}
+          : s.church_name
+            ? html`<span class="mark" aria-hidden="true">${initial(s.church_name)}</span>`
+            : html`<img src="/icons/icon.svg" alt="" />`}
         <span>${s.church_name || 'GraceDesk'}</span>
       </a>
       <nav class="nav">
@@ -53,10 +52,10 @@ function header(ctx) {
           ? html`
             <a href="${base}/dashboard">Dashboard</a>
             ${user.is_admin ? html`<a href="${base}/admin">Admin</a>` : ''}
-            <a href="${base}/logout">Sign out</a>`
+            <a href="${base}/logout">Log out</a>`
           : base
-            ? html`<a href="${base}/login">Sign in</a>`
-            : html`<a href="/find">Find your church</a><a href="/signup">Start a church</a>`}
+            ? html`<a href="${base}/login">Log in</a>`
+            : html`<a href="/find">Find your church</a><a href="/signup">Set up a church</a>`}
       </nav>
     </div>
   </header>`;
@@ -74,13 +73,13 @@ function footer(ctx) {
   return html`
   <footer class="site-footer">
     <div class="container">
-      <div>
-        ${s.church_email ? html`<a href="mailto:${s.church_email}">${s.church_email}</a>&nbsp;&nbsp;` : ''}
-        ${s.church_phone ? html`<span class="muted">${s.church_phone}</span>&nbsp;&nbsp;` : ''}
-        <a href="${base}/terms">Terms</a>&nbsp;&nbsp;
-        <button type="button" onclick="gdToggleTheme()" style="background:none;border:none;color:var(--muted);cursor:pointer;font:inherit;padding:0;text-decoration:underline">Theme</button>
+      <div class="links">
+        ${s.church_email ? html`<a href="mailto:${s.church_email}">${s.church_email}</a>` : ''}
+        ${s.church_phone ? html`<span>${s.church_phone}</span>` : ''}
+        ${base ? html`<a href="${base}/terms">Terms and privacy</a>` : ''}
+        <button type="button" class="linkbtn" onclick="gdToggleTheme()">Switch light or dark</button>
       </div>
-      <div class="muted">© ${year} ${s.church_name || 'GraceDesk'} · Powered by GraceDesk</div>
+      <div>© ${year} ${s.church_name ? html`${s.church_name}. Powered by GraceDesk` : 'GraceDesk'}</div>
     </div>
   </footer>`;
 }

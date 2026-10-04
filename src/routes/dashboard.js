@@ -61,8 +61,8 @@ dashboard.get('/dashboard', requireAuth, async (c) => {
         ${recent.length ? table([
           { head: 'Date', cell: (x) => x.date },
           { head: 'Amount', cell: (x) => formatMoney(x.amount, x.currency || cur) },
-          { head: 'Category', cell: (x) => x.category || '—' },
-          { head: 'Receipt', cell: (x) => x.receipt_number || '—' },
+          { head: 'Category', cell: (x) => x.category || '-' },
+          { head: 'Receipt', cell: (x) => x.receipt_number || '-' },
         ], recent) : empty('No contributions recorded yet.')}`)}
       <div class="wrap-gap mt-2">
         <a href="${b}/reports" class="btn btn-primary btn-sm">Download a statement</a>
@@ -108,8 +108,8 @@ dashboard.get('/contributions', requireAuth, async (c) => {
     { head: 'Date', cell: (x) => x.date },
     { head: 'Amount', cell: (x) => formatMoney(x.amount, x.currency || cur) },
     { head: 'Method', cell: (x) => METHOD_LABELS[x.method] || x.method },
-    { head: 'Category', cell: (x) => x.category || '—' },
-    { head: 'Receipt', cell: (x) => x.receipt_number || '—' },
+    { head: 'Category', cell: (x) => x.category || '-' },
+    { head: 'Receipt', cell: (x) => x.receipt_number || '-' },
   ];
 
   const body = html`
@@ -120,9 +120,9 @@ dashboard.get('/contributions', requireAuth, async (c) => {
         <a href="${b}/contributions?view=family" class="btn ${view === 'family' ? 'btn-primary' : 'btn-ghost'} btn-sm">Family</a>
       </div>` : ''}
     </div>
-    <p class="muted small mb-2">${rows.length} contribution(s) · total ${formatMoney(total, cur)}</p>
+    <p class="muted small mb-2">${rows.length} contribution(s), total ${formatMoney(total, cur)}</p>
     ${table(cols, rows, 'No contributions to show.')}
-    <p class="small mt-2"><a href="${b}/reports">Download a statement →</a></p>`;
+    <p class="small mt-2"><a href="${b}/reports">Download a statement</a></p>`;
   return c.html(layout({ ...ctx, title }, body));
 });
 
@@ -228,7 +228,7 @@ function securityView(ctx, u, { flash = {} } = {}) {
     const uri = totpUri(u.totp_secret, ctx.user.email, ctx.settings.church_name || 'GraceDesk');
     inner = html`
       ${flash.disabled ? alertBox('success', 'Two-factor authentication is off.') : ''}
-      <p class="muted small">In your authenticator app (Google Authenticator, Authy, 1Password…), add an account and enter this key:</p>
+      <p class="muted small">In your authenticator app (such as Google Authenticator, Authy or 1Password), add an account and enter this key:</p>
       <div class="card" style="text-align:center;font-family:monospace;letter-spacing:2px;word-break:break-all">${u.totp_secret}</div>
       <p class="small mt-1"><a href="${uri}">Open in an app</a> if you're on your phone.</p>
       <form method="post" action="${b}/security/enable" class="mt-2">
@@ -243,7 +243,7 @@ function securityView(ctx, u, { flash = {} } = {}) {
       <form method="post" action="${b}/security/setup" class="mt-1"><button class="btn btn-primary btn-sm">Set up two-factor</button></form>`;
   }
   return html`<div class="narrow">${card(html`<h1 style="font-size:1.4rem">Two-factor authentication</h1>${inner}
-    <p class="small mt-2"><a href="${b}/profile">← Back to profile</a></p>`)}</div>`;
+    <p class="small mt-2"><a href="${b}/profile">Back to profile</a></p>`)}</div>`;
 }
 
 // --- Profile ---------------------------------------------------------------
@@ -283,7 +283,7 @@ function profileView(ctx, member, saved) {
   if (!member) {
     return card(html`<h1 style="font-size:1.4rem">My profile</h1>
       <p class="muted small">No member record is linked to your account.</p>
-      <p class="small"><a href="${b}/change-password">Change password</a> &nbsp;·&nbsp; <a href="${b}/security">Two-factor authentication</a></p>`);
+      <p class="small"><a href="${b}/change-password">Change password</a> &nbsp;|&nbsp; <a href="${b}/security">Two-factor authentication</a></p>`);
   }
   const v = { ...member, phones: parsePhones(member.phones).join(', ') };
   const monthSel = (name, val) => html`<select class="input" name="${name}"><option value="">Month</option>
@@ -316,7 +316,7 @@ function profileView(ctx, member, saved) {
         </div>
         ${submitBtn('Save profile')}
       </form>
-      <p class="small mt-2"><a href="${b}/change-password">Change password</a> &nbsp;·&nbsp; <a href="${b}/security">Two-factor authentication</a></p>`)}`;
+      <p class="small mt-2"><a href="${b}/change-password">Change password</a> &nbsp;|&nbsp; <a href="${b}/security">Two-factor authentication</a></p>`)}`;
 }
 
 // Disable the email field so it is read-only (email edits are admin-only).
