@@ -1,8 +1,8 @@
 /* GraceDesk stylesheet. No framework, no build step, no web fonts.
 
    The look is a church record book: white paper, ruled lines tinted by the
-   church's own color, a red margin rule down the page, index tabs for the
-   admin sections, and accounting double rules under headers and totals.
+   church's own color, index tabs for the admin sections, and accounting
+   double rules under headers and totals.
    Each church's color is injected as --brand on :root in the page head. */
 
 :root {
@@ -12,7 +12,6 @@
   --paper: #ffffff;
   --ink: #16202a;            /* blue-black ink */
   --muted: #55606b;
-  --margin: #dc5a52;         /* the margin rule */
   --danger: #a3261d;
   --danger-solid: #a3261d;
   --ok: #1f6b3a;
@@ -23,14 +22,13 @@
   --tint: color-mix(in srgb, var(--brand) 7%, var(--paper));
   --field-line: color-mix(in srgb, var(--ink) 62%, var(--paper));
   --maxw: 60rem;
-  --gutter: 1.75rem;         /* space left of the content, where the margin rule runs */
 }
 
 /* Dark mode: follow the device unless the viewer picked light, and honor an
    explicit data-theme="dark" choice. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #14181c; --ink: #e9edf0; --muted: #a9b2ba; --margin: #b9544e;
+    --paper: #14181c; --ink: #e9edf0; --muted: #a9b2ba;
     --danger: #f2938a; --ok: #86cfa1; --warn: #e6b566;
     --link: color-mix(in srgb, var(--brand) 42%, #ffffff);
     --rule: color-mix(in srgb, var(--brand) 38%, var(--paper));
@@ -39,7 +37,7 @@
   }
 }
 :root[data-theme="dark"] {
-  --paper: #14181c; --ink: #e9edf0; --muted: #a9b2ba; --margin: #b9544e;
+  --paper: #14181c; --ink: #e9edf0; --muted: #a9b2ba;
   --danger: #f2938a; --ok: #86cfa1; --warn: #e6b566;
   --link: color-mix(in srgb, var(--brand) 42%, #ffffff);
   --rule: color-mix(in srgb, var(--brand) 38%, var(--paper));
@@ -60,11 +58,7 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
-  /* The margin rule: one line the full height of the page, just left of the content. */
-  background:
-    linear-gradient(var(--margin), var(--margin))
-    max(0.6rem, calc(50% - var(--maxw) / 2 + 0.6rem)) 0 / 2px 100% no-repeat,
-    var(--paper);
+  background: var(--paper);
 }
 
 h1, h2, h3 {
@@ -92,7 +86,7 @@ p { margin: 0 0 0.9rem; }
 
 .container {
   width: 100%; max-width: var(--maxw); margin: 0 auto;
-  padding: 0 1rem 0 var(--gutter);
+  padding: 0 1rem;
 }
 .main { flex: 1 0 auto; width: 100%; padding: 1.75rem 0 3rem; }
 .narrow { max-width: 27rem; margin: 0 auto; }
