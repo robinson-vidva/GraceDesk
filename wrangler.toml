@@ -6,6 +6,11 @@ compatibility_flags = ["nodejs_compat"]
 # Static assets (public/) served directly by the Worker runtime.
 assets = { directory = "./public", binding = "ASSETS" }
 
+# Custom domain. Cloudflare creates the DNS record and certificate automatically
+# because askdevotions.com is a zone on this account. Self-hosting elsewhere:
+# change this to your own hostname, or remove it to use the workers.dev URL.
+routes = [{ pattern = "gracedesk.askdevotions.com", custom_domain = true }]
+
 # ---------------------------------------------------------------------------
 # Cloudflare D1 (SQLite) — the application database.
 # For local dev, Wrangler creates a local SQLite file automatically; no cloud
@@ -38,3 +43,5 @@ crons = ["0 13 * * *"]
 # SESSION_SECRET, ADMIN_PASSWORD) go in .dev.vars locally and
 # `wrangler secret put` in production.
 APP_NAME = "GraceDesk"
+# Canonical public URL, used in email links. Match the custom domain above.
+APP_URL = "https://gracedesk.askdevotions.com"
